@@ -4066,7 +4066,10 @@ class StudioGUI(ctk.CTk):
                 codec_name = self.vieneu_codec_var.get()
                 device = self.vieneu_device_var.get()
                 enable_triton = self.vieneu_triton_var.get()
-                max_batch = int(self.vieneu_batch_var.get() or "8")
+                try:
+                    max_batch = int(self.vieneu_batch_var.get() or "8")
+                except ValueError:
+                    max_batch = 8
                 
                 backbone_config = VIENEU_BACKBONE_CONFIGS.get(backbone_name, {})
                 codec_config = VIENEU_CODEC_CONFIGS.get(codec_name, {})
@@ -4248,12 +4251,13 @@ class StudioGUI(ctk.CTk):
                 messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu: {audio_path}")
                 return
         else:
-            # Custom voice
-            if self.vieneu_ref_codes is None:
+            # Custom voice - check if ref_codes is None or empty
+            if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
                 messagebox.showerror("Lỗi", "Vui lòng mã hóa giọng mẫu trước!")
                 return
+            voice_name = "Custom"
         
-        self._vieneu_log(f"🎙️ Đang tạo audio với giọng: {voice_name if voice_mode == 'preset' else 'Custom'}")
+        self._vieneu_log(f"🎙️ Đang tạo audio với giọng: {voice_name}")
         self._vieneu_log(f"📝 Text length: {len(text)} chars")
         
         self.btn_vieneu_generate.configure(state="disabled")
@@ -4268,7 +4272,7 @@ class StudioGUI(ctk.CTk):
                 
                 # Get reference
                 if voice_mode == "preset":
-                    voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+                    voice_info = VIENEU_VOICE_SAMPLES.get(self.vieneu_selected_voice.get(), {})
                     audio_path = voice_info.get("audio", "")
                     text_path = voice_info.get("text", "")
                     codes_path = voice_info.get("codes", "")
@@ -4284,7 +4288,11 @@ class StudioGUI(ctk.CTk):
                     codec_name = self.vieneu_codec_var.get()
                     if "ONNX" in codec_name and os.path.exists(codes_path):
                         self.after(0, lambda: self._vieneu_log("📦 Loading pre-encoded codes..."))
-                        ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
+                        try:
+                            ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
+                        except (RuntimeError, EOFError, FileNotFoundError) as e:
+                            self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ Không thể load codes file, encoding thay thế: {err}"))
+                            ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
                     else:
                         self.after(0, lambda: self._vieneu_log("🔧 Encoding reference audio..."))
                         ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
@@ -4295,9 +4303,8 @@ class StudioGUI(ctk.CTk):
                 if isinstance(ref_codes, torch.Tensor):
                     ref_codes = ref_codes.cpu().numpy()
                 
-                # Split long text into chunks
-                from utils.core_utils import split_text_into_chunks
-                chunks = split_text_into_chunks(text, max_chars=VIENEU_MAX_CHARS_PER_CHUNK)
+                # Split long text into chunks using local function
+                chunks = split_text_into_chunks(text, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
                 total_chunks = len(chunks)
                 
                 self.after(0, lambda: self._vieneu_log(f"📝 Chia thành {total_chunks} đoạn"))
@@ -4308,12 +4315,14 @@ class StudioGUI(ctk.CTk):
                 
                 start_time = time.time()
                 
-                # Process chunks
+                # Process chunks - chunks are TextChunk objects with .text attribute
                 for i, chunk in enumerate(chunks):
                     self.after(0, lambda idx=i+1, total=total_chunks: self._vieneu_log(f"⏳ Đang xử lý đoạn {idx}/{total}..."))
                     self.after(0, lambda idx=i+1, total=total_chunks: self.vieneu_status_lbl.configure(text=f"Đoạn {idx}/{total}"))
                     
-                    wav = self.vieneu_tts_instance.infer(chunk, ref_codes, ref_text)
+                    # TextChunk has .text attribute
+                    chunk_text = chunk.text if hasattr(chunk, 'text') else str(chunk)
+                    wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
                     
                     if wav is not None and len(wav) > 0:
                         all_audio.append(wav)
@@ -4417,7 +4426,6 @@ class StudioGUI(ctk.CTk):
             import torch
             import numpy as np
             import soundfile as sf
-            from utils.core_utils import split_text_into_chunks
             
             # Get reference voice
             if voice_mode == "preset":
@@ -4435,11 +4443,16 @@ class StudioGUI(ctk.CTk):
                 
                 codec_name = self.vieneu_codec_var.get()
                 if "ONNX" in codec_name and os.path.exists(codes_path):
-                    ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
+                    try:
+                        ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
+                    except (RuntimeError, EOFError, FileNotFoundError) as e:
+                        self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ Không thể load codes file: {err}"))
+                        ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
                 else:
                     ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
             else:
-                if self.vieneu_ref_codes is None:
+                # Check if ref_codes is None or empty
+                if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
                     self.after(0, lambda: self._vieneu_log("❌ Chưa mã hóa giọng mẫu!"))
                     return
                 ref_codes = self.vieneu_ref_codes
@@ -4485,19 +4498,22 @@ class StudioGUI(ctk.CTk):
                         with open(file_path, 'r', encoding='utf-8') as f:
                             content = f.read()
                         subs = parse_srt(content)
-                        text_chunks = [sub.text for sub in subs]
+                        # SRT subtitles are strings, create list of strings
+                        text_items = [sub.text for sub in subs]
+                        is_text_chunk = False
                     else:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             content = f.read()
-                        # Clean and split
+                        # Clean and split using local function - returns TextChunk objects
                         cleaned = clean_text_for_tts(content)
-                        text_chunks = split_text_into_chunks(cleaned, max_chars=VIENEU_MAX_CHARS_PER_CHUNK)
+                        text_items = split_text_into_chunks(cleaned, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
+                        is_text_chunk = True
                     
-                    if not text_chunks:
+                    if not text_items:
                         self.after(0, lambda: self._vieneu_log("  ⚠️ File trống, bỏ qua"))
                         continue
                     
-                    self.after(0, lambda c=len(text_chunks): self._vieneu_log(f"  📝 {c} đoạn"))
+                    self.after(0, lambda c=len(text_items): self._vieneu_log(f"  📝 {c} đoạn"))
                     
                     # Process chunks
                     all_audio = []
@@ -4505,14 +4521,18 @@ class StudioGUI(ctk.CTk):
                     temp_dir = os.path.join(output_dir, f"_temp_{base_name}")
                     os.makedirs(temp_dir, exist_ok=True)
                     
-                    for i, chunk_text in enumerate(text_chunks):
+                    for i, chunk_item in enumerate(text_items):
                         if not self.vieneu_processing:
                             break
                         
-                        chunk_text_str = chunk_text if isinstance(chunk_text, str) else chunk_text
+                        # Handle both TextChunk objects and plain strings
+                        if is_text_chunk and hasattr(chunk_item, 'text'):
+                            chunk_text = chunk_item.text
+                        else:
+                            chunk_text = str(chunk_item)
                         
                         try:
-                            wav = self.vieneu_tts_instance.infer(chunk_text_str, ref_codes, ref_text)
+                            wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
                             
                             if wav is not None and len(wav) > 0:
                                 # Save chunk
@@ -4520,7 +4540,7 @@ class StudioGUI(ctk.CTk):
                                 sf.write(chunk_file, wav, sr)
                                 chunk_files.append(chunk_file)
                                 all_audio.append(wav)
-                                if i < len(text_chunks) - 1:
+                                if i < len(text_items) - 1:
                                     all_audio.append(silence_pad)
                         except Exception as e:
                             self.after(0, lambda err=str(e), idx=i: self._vieneu_log(f"  ⚠️ Chunk [{idx}] lỗi: {err}"))
@@ -4537,11 +4557,11 @@ class StudioGUI(ctk.CTk):
                             for cf in chunk_files:
                                 try:
                                     os.remove(cf)
-                                except:
+                                except OSError:
                                     pass
                             try:
                                 os.rmdir(temp_dir)
-                            except:
+                            except OSError:
                                 pass
                     elif chunk_files:
                         self.after(0, lambda n=len(chunk_files): self._vieneu_log(f"  ✅ Đã tạo {n} chunks"))

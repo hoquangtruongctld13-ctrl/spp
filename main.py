@@ -223,6 +223,129 @@ EDGE_TTS_LANGUAGE_MAP = {
 EDGE_TTS_LANGUAGES = list(EDGE_TTS_LANGUAGE_MAP.keys())
 EDGE_TTS_GENDERS = ["Tất cả", "Male", "Female"]
 
+# =============================================================================
+# VIENEU-TTS CONFIGURATION
+# =============================================================================
+
+# VieNeu-TTS directory path (relative to main.py)
+VIENEU_TTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VieNeu-TTS")
+
+# Model backbone configurations
+VIENEU_BACKBONE_CONFIGS = {
+    "VieNeu-TTS (GPU)": {
+        "repo": "pnnbao-ump/VieNeu-TTS",
+        "supports_streaming": False,
+        "description": "Chất lượng cao nhất, yêu cầu GPU",
+        "requires_gpu": True
+    },
+    "VieNeu-TTS-q8-gguf": {
+        "repo": "pnnbao-ump/VieNeu-TTS-q8-gguf",
+        "supports_streaming": True,
+        "description": "Cân bằng giữa chất lượng và tốc độ",
+        "requires_gpu": False
+    },
+    "VieNeu-TTS-q4-gguf": {
+        "repo": "pnnbao-ump/VieNeu-TTS-q4-gguf",
+        "supports_streaming": True,
+        "description": "Nhẹ nhất, phù hợp CPU",
+        "requires_gpu": False
+    },
+}
+
+# Codec configurations
+VIENEU_CODEC_CONFIGS = {
+    "NeuCodec (Standard)": {
+        "repo": "neuphonic/neucodec",
+        "description": "Codec chuẩn, tốc độ trung bình",
+        "use_preencoded": False
+    },
+    "NeuCodec ONNX (Fast CPU)": {
+        "repo": "neuphonic/neucodec-onnx-decoder",
+        "description": "Tối ưu cho CPU, cần pre-encoded codes",
+        "use_preencoded": True
+    },
+}
+
+# Pre-configured voice samples
+VIENEU_VOICE_SAMPLES = {
+    "Vĩnh (nam miền Nam)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Vĩnh (nam miền Nam).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Vĩnh (nam miền Nam).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Vĩnh (nam miền Nam).pt"),
+        "gender": "Nam",
+        "accent": "Miền Nam"
+    },
+    "Bình (nam miền Bắc)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Bình (nam miền Bắc).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Bình (nam miền Bắc).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Bình (nam miền Bắc).pt"),
+        "gender": "Nam",
+        "accent": "Miền Bắc"
+    },
+    "Ngọc (nữ miền Bắc)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Ngọc (nữ miền Bắc).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Ngọc (nữ miền Bắc).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Ngọc (nữ miền Bắc).pt"),
+        "gender": "Nữ",
+        "accent": "Miền Bắc"
+    },
+    "Dung (nữ miền Nam)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Dung (nữ miền Nam).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Dung (nữ miền Nam).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Dung (nữ miền Nam).pt"),
+        "gender": "Nữ",
+        "accent": "Miền Nam"
+    },
+    "Tuyên (nam miền Bắc)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Tuyên (nam miền Bắc).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Tuyên (nam miền Bắc).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Tuyên (nam miền Bắc).pt"),
+        "gender": "Nam",
+        "accent": "Miền Bắc"
+    },
+    "Nguyên (nam miền Nam)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Nguyên (nam miền Nam).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Nguyên (nam miền Nam).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Nguyên (nam miền Nam).pt"),
+        "gender": "Nam",
+        "accent": "Miền Nam"
+    },
+    "Sơn (nam miền Nam)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Sơn (nam miền Nam).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Sơn (nam miền Nam).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Sơn (nam miền Nam).pt"),
+        "gender": "Nam",
+        "accent": "Miền Nam"
+    },
+    "Đoan (nữ miền Nam)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Đoan (nữ miền Nam).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Đoan (nữ miền Nam).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Đoan (nữ miền Nam).pt"),
+        "gender": "Nữ",
+        "accent": "Miền Nam"
+    },
+    "Ly (nữ miền Bắc)": {
+        "audio": os.path.join(VIENEU_TTS_DIR, "sample", "Ly (nữ miền Bắc).wav"),
+        "text": os.path.join(VIENEU_TTS_DIR, "sample", "Ly (nữ miền Bắc).txt"),
+        "codes": os.path.join(VIENEU_TTS_DIR, "sample", "Ly (nữ miền Bắc).pt"),
+        "gender": "Nữ",
+        "accent": "Miền Bắc"
+    },
+}
+
+# GGUF models only support these 4 voices
+VIENEU_GGUF_ALLOWED_VOICES = [
+    "Vĩnh (nam miền Nam)",
+    "Bình (nam miền Bắc)",
+    "Ngọc (nữ miền Bắc)",
+    "Dung (nữ miền Nam)",
+]
+
+# VieNeu-TTS default settings
+VIENEU_MAX_CHARS_PER_CHUNK = 256
+VIENEU_DEFAULT_DEVICE = "Auto"  # Auto, CPU, CUDA
+VIENEU_SAMPLE_RATE = 24000
+
 # Enhanced Retry settings
 MAX_RETRIES = 5  # Tăng số lần retry
 RECOVERY_EXTRA_RETRIES = 1  # Extra retries for recovery mode (missing chunk retry)
@@ -2420,6 +2543,10 @@ class StudioGUI(ctk.CTk):
         self.lt_chunk_v2_enabled = False  # Enable punctuation-based chunking for Long Text
         # Gemini TTS file chunking settings
         self.gemini_chunk_size = GEMINI_DEFAULT_CHUNK_SIZE  # Default 300 chars
+        # VieNeu-TTS settings
+        self.vieneu_backbone = "VieNeu-TTS-q4-gguf"
+        self.vieneu_codec = "NeuCodec (Standard)"
+        self.vieneu_device = "Auto"
 
     def _setup_ui(self):
         # Main Tabview
@@ -2432,6 +2559,7 @@ class StudioGUI(ctk.CTk):
         self.tab_multivoice = self.tabview.add("Multi Voice (Đa giọng)")
         self.tab_capcut = self.tabview.add("Capcut Voice")
         self.tab_edge = self.tabview.add("Edge TTS")
+        self.tab_vieneu = self.tabview.add("🦜 VieNeu-TTS")
         self.tab_script = self.tabview.add("Đọc Kịch Bản")
         self.tab_settings = self.tabview.add("⚙Configuration")
 
@@ -2442,6 +2570,7 @@ class StudioGUI(ctk.CTk):
         self._setup_multivoice_tab()
         self._setup_capcut_tab()
         self._setup_edge_tab()
+        self._setup_vieneu_tab()
         self._setup_script_tab()
         
         # Bind optimized paste handlers to all text inputs to prevent UI lag
@@ -2467,6 +2596,10 @@ class StudioGUI(ctk.CTk):
         # Script text input
         if hasattr(self, 'script_text_input'):
             textboxes_to_optimize.append(self.script_text_input)
+        
+        # VieNeu-TTS text input
+        if hasattr(self, 'vieneu_text_input'):
+            textboxes_to_optimize.append(self.vieneu_text_input)
         
         for textbox in textboxes_to_optimize:
             textbox.bind("<Control-v>", lambda e, tb=textbox: self._optimized_paste(e, tb))
@@ -3470,6 +3603,996 @@ class StudioGUI(ctk.CTk):
         
         # Auto-load voices
         self.after(500, self._load_edge_voices)
+
+    # ==========================================================================
+    # TAB: VIENEU-TTS (Vietnamese Neural TTS with Voice Cloning)
+    # ==========================================================================
+    def _setup_vieneu_tab(self):
+        """Setup the VieNeu-TTS tab - Vietnamese TTS with voice cloning"""
+        tab = self.tab_vieneu
+        tab.grid_columnconfigure(0, weight=3)
+        tab.grid_columnconfigure(1, weight=7)
+        tab.grid_rowconfigure(0, weight=1)
+        
+        # Initialize VieNeu-TTS state variables
+        self.vieneu_tts_instance = None
+        self.vieneu_model_loaded = False
+        self.vieneu_using_fast = False
+        self.vieneu_ref_codes = None
+        self.vieneu_ref_text = ""
+        self.vieneu_temp_audio = None
+        self.vieneu_processing = False
+        self.vieneu_custom_ref_audio = None
+        self.vieneu_custom_ref_text = ""
+
+        # --- LEFT: Model & Voice Selection ---
+        left_frame = ctk.CTkFrame(tab, fg_color="#0d1117")
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5), pady=0)
+
+        # Header
+        header = ctk.CTkFrame(left_frame, fg_color="#6366f1", height=45)
+        header.pack(fill="x")
+        ctk.CTkLabel(header, text="🦜 VIENEU-TTS", font=("Roboto", 14, "bold"), text_color="white").pack(pady=10)
+        
+        # Scrollable content
+        content_scroll = ctk.CTkScrollableFrame(left_frame, fg_color="transparent")
+        content_scroll.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # ===== MODEL CONFIGURATION SECTION =====
+        ctk.CTkLabel(content_scroll, text="⚙️ CẤU HÌNH MODEL", font=("Roboto", 12, "bold"), text_color="#818cf8").pack(anchor="w", padx=10, pady=(10, 5))
+        
+        model_frame = ctk.CTkFrame(content_scroll, fg_color="#1f2937")
+        model_frame.pack(fill="x", padx=10, pady=5)
+        
+        # Backbone selection
+        ctk.CTkLabel(model_frame, text="Backbone Model:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
+        self.vieneu_backbone_var = ctk.StringVar(value="VieNeu-TTS-q4-gguf")
+        self.vieneu_backbone_combo = ctk.CTkComboBox(
+            model_frame, 
+            values=list(VIENEU_BACKBONE_CONFIGS.keys()),
+            variable=self.vieneu_backbone_var,
+            command=self._vieneu_on_backbone_change
+        )
+        self.vieneu_backbone_combo.pack(fill="x", padx=10, pady=2)
+        
+        # Backbone description
+        self.vieneu_backbone_desc = ctk.CTkLabel(
+            model_frame, 
+            text=VIENEU_BACKBONE_CONFIGS["VieNeu-TTS-q4-gguf"]["description"],
+            font=("Roboto", 9), text_color="gray"
+        )
+        self.vieneu_backbone_desc.pack(anchor="w", padx=10, pady=2)
+        
+        # Codec selection
+        ctk.CTkLabel(model_frame, text="Audio Codec:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
+        self.vieneu_codec_var = ctk.StringVar(value="NeuCodec (Standard)")
+        self.vieneu_codec_combo = ctk.CTkComboBox(
+            model_frame, 
+            values=list(VIENEU_CODEC_CONFIGS.keys()),
+            variable=self.vieneu_codec_var
+        )
+        self.vieneu_codec_combo.pack(fill="x", padx=10, pady=2)
+        
+        # Device selection
+        ctk.CTkLabel(model_frame, text="Device:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
+        self.vieneu_device_var = ctk.StringVar(value="Auto")
+        device_frame = ctk.CTkFrame(model_frame, fg_color="transparent")
+        device_frame.pack(fill="x", padx=10, pady=2)
+        
+        ctk.CTkRadioButton(device_frame, text="Auto", variable=self.vieneu_device_var, value="Auto").pack(side="left", padx=5)
+        ctk.CTkRadioButton(device_frame, text="CPU", variable=self.vieneu_device_var, value="CPU").pack(side="left", padx=5)
+        ctk.CTkRadioButton(device_frame, text="CUDA (GPU)", variable=self.vieneu_device_var, value="CUDA").pack(side="left", padx=5)
+        
+        # Advanced options
+        adv_frame = ctk.CTkFrame(model_frame, fg_color="transparent")
+        adv_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.vieneu_triton_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(adv_frame, text="Enable Triton (GPU)", variable=self.vieneu_triton_var, font=("Roboto", 10)).pack(side="left", padx=5)
+        
+        ctk.CTkLabel(adv_frame, text="Max Batch:", font=("Roboto", 10)).pack(side="left", padx=(15, 5))
+        self.vieneu_batch_var = ctk.StringVar(value="8")
+        ctk.CTkEntry(adv_frame, textvariable=self.vieneu_batch_var, width=50).pack(side="left")
+        
+        # Load model button
+        self.btn_vieneu_load = ctk.CTkButton(
+            model_frame, 
+            text="🔄 TẢI MODEL", 
+            fg_color="#6366f1", 
+            hover_color="#4f46e5",
+            command=self._vieneu_load_model
+        )
+        self.btn_vieneu_load.pack(fill="x", padx=10, pady=10)
+        
+        # Model status
+        self.vieneu_model_status = ctk.CTkLabel(
+            model_frame, 
+            text="⏳ Model chưa được tải", 
+            font=("Roboto", 10), 
+            text_color="#fbbf24",
+            wraplength=250
+        )
+        self.vieneu_model_status.pack(anchor="w", padx=10, pady=(0, 10))
+
+        # ===== VOICE SELECTION SECTION =====
+        ctk.CTkLabel(content_scroll, text="🎤 CHỌN GIỌNG NÓI", font=("Roboto", 12, "bold"), text_color="#818cf8").pack(anchor="w", padx=10, pady=(15, 5))
+        
+        voice_frame = ctk.CTkFrame(content_scroll, fg_color="#1f2937")
+        voice_frame.pack(fill="x", padx=10, pady=5)
+        
+        # Voice mode tabs
+        self.vieneu_voice_mode = ctk.StringVar(value="preset")
+        mode_frame = ctk.CTkFrame(voice_frame, fg_color="transparent")
+        mode_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkRadioButton(
+            mode_frame, text="Giọng mẫu có sẵn", 
+            variable=self.vieneu_voice_mode, value="preset",
+            command=self._vieneu_on_voice_mode_change
+        ).pack(side="left", padx=5)
+        ctk.CTkRadioButton(
+            mode_frame, text="Clone giọng mới", 
+            variable=self.vieneu_voice_mode, value="custom",
+            command=self._vieneu_on_voice_mode_change
+        ).pack(side="left", padx=5)
+        
+        # Preset voice list
+        self.vieneu_preset_frame = ctk.CTkFrame(voice_frame, fg_color="transparent")
+        self.vieneu_preset_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(self.vieneu_preset_frame, text="Chọn giọng:", font=("Roboto", 10)).pack(anchor="w")
+        
+        self.vieneu_voice_list = ctk.CTkScrollableFrame(self.vieneu_preset_frame, height=150, fg_color="#111827")
+        self.vieneu_voice_list.pack(fill="x", pady=5)
+        
+        self.vieneu_selected_voice = ctk.StringVar(value="Vĩnh (nam miền Nam)")
+        self._vieneu_populate_voice_list()
+        
+        # Preview preset voice
+        self.btn_vieneu_preview_preset = ctk.CTkButton(
+            self.vieneu_preset_frame,
+            text="▶ Nghe thử giọng mẫu",
+            fg_color="#3b82f6",
+            command=self._vieneu_preview_preset_voice
+        )
+        self.btn_vieneu_preview_preset.pack(fill="x", pady=5)
+        
+        # Custom voice (voice cloning) frame
+        self.vieneu_custom_frame = ctk.CTkFrame(voice_frame, fg_color="transparent")
+        # Hidden by default
+        
+        ctk.CTkLabel(self.vieneu_custom_frame, text="📂 Upload file audio mẫu (.wav):", font=("Roboto", 10)).pack(anchor="w", pady=(5, 2))
+        
+        custom_audio_row = ctk.CTkFrame(self.vieneu_custom_frame, fg_color="transparent")
+        custom_audio_row.pack(fill="x", pady=2)
+        
+        self.vieneu_custom_audio_entry = ctk.CTkEntry(custom_audio_row, placeholder_text="Chọn file audio...")
+        self.vieneu_custom_audio_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
+        ctk.CTkButton(custom_audio_row, text="📂", width=40, command=self._vieneu_browse_custom_audio).pack(side="left")
+        
+        ctk.CTkLabel(self.vieneu_custom_frame, text="📝 Nội dung lời thoại mẫu:", font=("Roboto", 10)).pack(anchor="w", pady=(10, 2))
+        self.vieneu_custom_text_input = ctk.CTkTextbox(self.vieneu_custom_frame, height=80, font=("Roboto", 11))
+        self.vieneu_custom_text_input.pack(fill="x", pady=2)
+        self.vieneu_custom_text_input.insert("1.0", "Nhập nội dung lời thoại trong file audio mẫu...")
+        
+        self.btn_vieneu_encode_custom = ctk.CTkButton(
+            self.vieneu_custom_frame,
+            text="🔧 Mã hóa giọng mẫu",
+            fg_color="#8b5cf6",
+            command=self._vieneu_encode_custom_voice
+        )
+        self.btn_vieneu_encode_custom.pack(fill="x", pady=10)
+        
+        self.vieneu_custom_status = ctk.CTkLabel(
+            self.vieneu_custom_frame,
+            text="",
+            font=("Roboto", 9),
+            text_color="gray"
+        )
+        self.vieneu_custom_status.pack(anchor="w")
+
+        # --- RIGHT: TTS Interface ---
+        right_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=0)
+        right_frame.grid_rowconfigure(1, weight=1)
+        right_frame.grid_columnconfigure(0, weight=1)
+
+        # Text Input Section
+        input_frame = ctk.CTkFrame(right_frame, fg_color="#0d1117")
+        input_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
+
+        ctk.CTkLabel(input_frame, text="📝 NHẬP VĂN BẢN CẦN ĐỌC", font=("Roboto", 14, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(15, 5))
+        
+        self.vieneu_text_input = ctk.CTkTextbox(input_frame, height=120, font=("Roboto", 12))
+        self.vieneu_text_input.pack(fill="x", padx=15, pady=5)
+        self.vieneu_text_input.insert("1.0", "Hà Nội, trái tim của Việt Nam, là một thành phố ngàn năm văn hiến với bề dày lịch sử và văn hóa độc đáo. Bước chân trên những con phố cổ kính quanh Hồ Hoàn Kiếm, du khách như được du hành ngược thời gian.")
+        
+        # Character count
+        char_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
+        char_frame.pack(fill="x", padx=15)
+        self.vieneu_char_count = ctk.CTkLabel(char_frame, text="Ký tự: 0", text_color="gray", font=("Roboto", 10))
+        self.vieneu_char_count.pack(side="right")
+        self.vieneu_text_input.bind("<KeyRelease>", self._vieneu_update_char_count)
+        self._vieneu_update_char_count()
+
+        # Control buttons
+        btn_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=15, pady=10)
+
+        self.btn_vieneu_generate = ctk.CTkButton(
+            btn_frame, 
+            text="🎙️ TẠO AUDIO", 
+            fg_color="#22c55e", 
+            hover_color="#16a34a",
+            font=("Roboto", 12, "bold"), 
+            state="disabled",
+            command=self._vieneu_generate
+        )
+        self.btn_vieneu_generate.pack(side="left", padx=5)
+
+        self.btn_vieneu_play = ctk.CTkButton(
+            btn_frame, 
+            text="▶ PHÁT", 
+            fg_color="#3b82f6", 
+            state="disabled", 
+            command=self._vieneu_play
+        )
+        self.btn_vieneu_play.pack(side="left", padx=5)
+
+        self.btn_vieneu_stop = ctk.CTkButton(
+            btn_frame, 
+            text="⏹ DỪNG", 
+            fg_color="#ef4444", 
+            command=self._vieneu_stop_playback
+        )
+        self.btn_vieneu_stop.pack(side="left", padx=5)
+
+        self.btn_vieneu_save = ctk.CTkButton(
+            btn_frame, 
+            text="💾 LƯU FILE", 
+            fg_color="#6366f1", 
+            state="disabled", 
+            command=self._vieneu_save
+        )
+        self.btn_vieneu_save.pack(side="left", padx=5)
+
+        self.vieneu_status_lbl = ctk.CTkLabel(btn_frame, text="Sẵn sàng", text_color="gray")
+        self.vieneu_status_lbl.pack(side="right", padx=10)
+
+        # File Processing Section
+        file_frame = ctk.CTkFrame(right_frame, fg_color="#0d1117")
+        file_frame.grid(row=1, column=0, sticky="nsew", pady=5)
+
+        ctk.CTkLabel(file_frame, text="📁 XỬ LÝ FILE HÀNG LOẠT", font=("Roboto", 14, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(15, 5))
+
+        # File selection
+        file_row = ctk.CTkFrame(file_frame, fg_color="transparent")
+        file_row.pack(fill="x", padx=15, pady=5)
+
+        self.vieneu_file_entry = ctk.CTkEntry(file_row, placeholder_text="Chọn file SRT/TXT/DOCX...")
+        self.vieneu_file_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+
+        ctk.CTkButton(file_row, text="📂 Chọn file", width=100, command=self._vieneu_browse_file).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📁 Thư mục", width=100, command=self._vieneu_browse_folder).pack(side="left", padx=2)
+
+        # Output folder
+        out_row = ctk.CTkFrame(file_frame, fg_color="transparent")
+        out_row.pack(fill="x", padx=15, pady=5)
+
+        self.vieneu_output_entry = ctk.CTkEntry(out_row, placeholder_text="Thư mục output...")
+        self.vieneu_output_entry.insert(0, "./vieneu_output")
+        self.vieneu_output_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+        ctk.CTkButton(out_row, text="📁 Chọn", width=100, command=self._vieneu_browse_output).pack(side="left")
+
+        # Options
+        opt_row = ctk.CTkFrame(file_frame, fg_color="transparent")
+        opt_row.pack(fill="x", padx=15, pady=5)
+        
+        self.vieneu_merge_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(opt_row, text="Hợp nhất voice", variable=self.vieneu_merge_var, font=("Roboto", 11)).pack(side="left", padx=5)
+        
+        self.vieneu_delete_chunks_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(opt_row, text="Xóa chunks sau khi ghép", variable=self.vieneu_delete_chunks_var, font=("Roboto", 11)).pack(side="left", padx=15)
+
+        # Process buttons
+        proc_btn_row = ctk.CTkFrame(file_frame, fg_color="transparent")
+        proc_btn_row.pack(fill="x", padx=15, pady=10)
+
+        self.btn_vieneu_process = ctk.CTkButton(
+            proc_btn_row, 
+            text="🚀 XỬ LÝ FILE", 
+            fg_color="#6366f1", 
+            hover_color="#4f46e5",
+            font=("Roboto", 12, "bold"), 
+            height=40,
+            state="disabled",
+            command=self._vieneu_process_file
+        )
+        self.btn_vieneu_process.pack(side="left", padx=5)
+
+        self.btn_vieneu_stop_process = ctk.CTkButton(
+            proc_btn_row, 
+            text="⏹ DỪNG", 
+            fg_color="#64748b", 
+            state="disabled",
+            command=self._vieneu_stop_processing
+        )
+        self.btn_vieneu_stop_process.pack(side="left", padx=5)
+
+        # Progress
+        self.vieneu_progress = ctk.CTkProgressBar(file_frame)
+        self.vieneu_progress.set(0)
+        self.vieneu_progress.pack(fill="x", padx=15, pady=5)
+
+        self.vieneu_file_status = ctk.CTkLabel(file_frame, text="Sẵn sàng xử lý", text_color="gray")
+        self.vieneu_file_status.pack(anchor="w", padx=15, pady=(0, 10))
+
+        # Log section
+        log_frame = ctk.CTkFrame(right_frame, fg_color="#020617")
+        log_frame.grid(row=2, column=0, sticky="nsew")
+
+        ctk.CTkLabel(log_frame, text="LOG", font=("Roboto", 12, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(10, 5))
+        self.vieneu_log = ctk.CTkTextbox(log_frame, font=("Consolas", 10), text_color="#22c55e", state="disabled")
+        self.vieneu_log.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+
+        # Update row weights
+        right_frame.grid_rowconfigure(2, weight=1)
+
+    # ==========================================================================
+    # VIENEU-TTS HELPER METHODS
+    # ==========================================================================
+    def _vieneu_log(self, msg):
+        """Add message to VieNeu-TTS log"""
+        self.vieneu_log.configure(state="normal")
+        self.vieneu_log.insert("end", f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+        self.vieneu_log.see("end")
+        self.vieneu_log.configure(state="disabled")
+
+    def _vieneu_on_backbone_change(self, value):
+        """Handle backbone model selection change"""
+        config = VIENEU_BACKBONE_CONFIGS.get(value, {})
+        self.vieneu_backbone_desc.configure(text=config.get("description", ""))
+        
+        # Update voice list for GGUF models (limited voices)
+        self._vieneu_populate_voice_list()
+        
+    def _vieneu_on_voice_mode_change(self):
+        """Handle voice mode change (preset vs custom)"""
+        mode = self.vieneu_voice_mode.get()
+        if mode == "preset":
+            self.vieneu_preset_frame.pack(fill="x", padx=10, pady=5)
+            self.vieneu_custom_frame.pack_forget()
+        else:
+            self.vieneu_preset_frame.pack_forget()
+            self.vieneu_custom_frame.pack(fill="x", padx=10, pady=5)
+
+    def _vieneu_populate_voice_list(self):
+        """Populate the voice list based on selected backbone"""
+        # Clear existing
+        for widget in self.vieneu_voice_list.winfo_children():
+            widget.destroy()
+        
+        backbone = self.vieneu_backbone_var.get()
+        
+        # GGUF models only support 4 voices
+        if "gguf" in backbone.lower():
+            available_voices = [v for v in VIENEU_GGUF_ALLOWED_VOICES if v in VIENEU_VOICE_SAMPLES]
+        else:
+            available_voices = list(VIENEU_VOICE_SAMPLES.keys())
+        
+        for voice_name in available_voices:
+            voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+            gender = voice_info.get("gender", "")
+            accent = voice_info.get("accent", "")
+            display = f"{voice_name}"
+            
+            rb = ctk.CTkRadioButton(
+                self.vieneu_voice_list,
+                text=display,
+                variable=self.vieneu_selected_voice,
+                value=voice_name,
+                font=("Roboto", 10)
+            )
+            rb.pack(anchor="w", pady=2, padx=5)
+
+    def _vieneu_update_char_count(self, event=None):
+        """Update character count for VieNeu-TTS text input"""
+        text = self.vieneu_text_input.get("1.0", "end").strip()
+        count = len(text)
+        self.vieneu_char_count.configure(text=f"Ký tự: {count}")
+
+    def _vieneu_browse_custom_audio(self):
+        """Browse for custom voice audio file"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Audio files", "*.wav *.mp3"), ("WAV files", "*.wav"), ("All files", "*.*")]
+        )
+        if file_path:
+            self.vieneu_custom_audio_entry.delete(0, "end")
+            self.vieneu_custom_audio_entry.insert(0, file_path)
+            self._vieneu_log(f"📂 Đã chọn file audio mẫu: {os.path.basename(file_path)}")
+
+    def _vieneu_browse_file(self):
+        """Browse for input file"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Text files", "*.txt"), ("Subtitle files", "*.srt *.vtt"), ("Word files", "*.docx"), ("All files", "*.*")]
+        )
+        if file_path:
+            self.vieneu_file_entry.delete(0, "end")
+            self.vieneu_file_entry.insert(0, file_path)
+            self._vieneu_log(f"📂 Đã chọn file: {os.path.basename(file_path)}")
+
+    def _vieneu_browse_folder(self):
+        """Browse for input folder"""
+        dir_path = filedialog.askdirectory(title="Chọn thư mục chứa file")
+        if dir_path:
+            self.vieneu_file_entry.delete(0, "end")
+            self.vieneu_file_entry.insert(0, dir_path)
+            # Count files
+            txt_files = glob.glob(os.path.join(dir_path, "*.txt"))
+            srt_files = glob.glob(os.path.join(dir_path, "*.srt"))
+            self._vieneu_log(f"📁 Đã chọn thư mục: {dir_path} ({len(txt_files)} txt, {len(srt_files)} srt)")
+
+    def _vieneu_browse_output(self):
+        """Browse for output directory"""
+        dir_path = filedialog.askdirectory()
+        if dir_path:
+            self.vieneu_output_entry.delete(0, "end")
+            self.vieneu_output_entry.insert(0, dir_path)
+
+    def _vieneu_preview_preset_voice(self):
+        """Preview/play the selected preset voice sample"""
+        voice_name = self.vieneu_selected_voice.get()
+        voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+        audio_path = voice_info.get("audio", "")
+        
+        if audio_path and os.path.exists(audio_path):
+            self.player.play(audio_path)
+            self._vieneu_log(f"▶ Đang phát mẫu: {voice_name}")
+        else:
+            self._vieneu_log(f"❌ Không tìm thấy file mẫu cho giọng: {voice_name}")
+            messagebox.showwarning("Cảnh báo", f"Không tìm thấy file audio mẫu.\nĐường dẫn: {audio_path}")
+
+    def _vieneu_load_model(self):
+        """Load VieNeu-TTS model"""
+        self._vieneu_log("⏳ Đang tải model... Vui lòng chờ...")
+        self.btn_vieneu_load.configure(state="disabled")
+        self.vieneu_model_status.configure(text="⏳ Đang tải model...", text_color="#fbbf24")
+        
+        def load_thread():
+            try:
+                backbone_name = self.vieneu_backbone_var.get()
+                codec_name = self.vieneu_codec_var.get()
+                device = self.vieneu_device_var.get()
+                enable_triton = self.vieneu_triton_var.get()
+                try:
+                    max_batch = int(self.vieneu_batch_var.get() or "8")
+                except ValueError:
+                    max_batch = 8
+                
+                backbone_config = VIENEU_BACKBONE_CONFIGS.get(backbone_name, {})
+                codec_config = VIENEU_CODEC_CONFIGS.get(codec_name, {})
+                
+                backbone_repo = backbone_config.get("repo", "pnnbao-ump/VieNeu-TTS-q4-gguf")
+                codec_repo = codec_config.get("repo", "neuphonic/neucodec")
+                
+                self.after(0, lambda: self._vieneu_log(f"🦜 Loading backbone: {backbone_repo}"))
+                self.after(0, lambda: self._vieneu_log(f"🎵 Loading codec: {codec_repo}"))
+                self.after(0, lambda: self._vieneu_log(f"🖥️ Device: {device}"))
+                
+                # Add VieNeu-TTS to path
+                vieneu_path = VIENEU_TTS_DIR
+                if vieneu_path not in sys.path:
+                    sys.path.insert(0, vieneu_path)
+                
+                # Determine actual device
+                import torch
+                has_cuda = torch.cuda.is_available()
+                
+                if device == "Auto":
+                    if "gguf" in backbone_name.lower():
+                        backbone_device = "gpu" if has_cuda else "cpu"
+                    else:
+                        backbone_device = "cuda" if has_cuda else "cpu"
+                    codec_device = "cuda" if has_cuda else "cpu"
+                elif device == "CPU":
+                    backbone_device = "cpu"
+                    codec_device = "cpu"
+                else:  # CUDA
+                    backbone_device = "cuda" if has_cuda else "cpu"
+                    codec_device = "cuda" if has_cuda else "cpu"
+                
+                # ONNX codec only runs on CPU
+                if "onnx" in codec_repo.lower():
+                    codec_device = "cpu"
+                
+                # GGUF uses "gpu" instead of "cuda"
+                if "gguf" in backbone_name.lower() and backbone_device == "cuda":
+                    backbone_device = "gpu"
+                
+                self.after(0, lambda: self._vieneu_log(f"   Backbone device: {backbone_device}"))
+                self.after(0, lambda: self._vieneu_log(f"   Codec device: {codec_device}"))
+                
+                # Check if we should use FastVieNeuTTS (LMDeploy)
+                use_fast = (
+                    has_cuda and 
+                    device != "CPU" and 
+                    "gguf" not in backbone_name.lower()
+                )
+                
+                # Import and create TTS instance
+                from vieneu_tts import VieNeuTTS, FastVieNeuTTS
+                
+                if use_fast:
+                    self.after(0, lambda: self._vieneu_log("🚀 Sử dụng LMDeploy backend (GPU optimized)"))
+                    try:
+                        self.vieneu_tts_instance = FastVieNeuTTS(
+                            backbone_repo=backbone_repo,
+                            backbone_device=backbone_device,
+                            codec_repo=codec_repo,
+                            codec_device=codec_device,
+                            memory_util=0.3,
+                            tp=1,
+                            enable_prefix_caching=True,
+                            enable_triton=enable_triton,
+                            max_batch_size=max_batch,
+                        )
+                        self.vieneu_using_fast = True
+                    except Exception as e:
+                        self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ LMDeploy không khả dụng: {err}"))
+                        self.after(0, lambda: self._vieneu_log("📦 Chuyển sang backend chuẩn..."))
+                        self.vieneu_tts_instance = VieNeuTTS(
+                            backbone_repo=backbone_repo,
+                            backbone_device=backbone_device,
+                            codec_repo=codec_repo,
+                            codec_device=codec_device
+                        )
+                        self.vieneu_using_fast = False
+                else:
+                    self.after(0, lambda: self._vieneu_log("📦 Sử dụng backend chuẩn"))
+                    self.vieneu_tts_instance = VieNeuTTS(
+                        backbone_repo=backbone_repo,
+                        backbone_device=backbone_device,
+                        codec_repo=codec_repo,
+                        codec_device=codec_device
+                    )
+                    self.vieneu_using_fast = False
+                
+                self.vieneu_model_loaded = True
+                
+                # Update UI
+                backend_name = "🚀 LMDeploy" if self.vieneu_using_fast else "📦 Standard"
+                status_msg = f"✅ Model đã tải!\n{backend_name} | {backbone_device.upper()}"
+                
+                self.after(0, lambda: self.vieneu_model_status.configure(text=status_msg, text_color="#22c55e"))
+                self.after(0, lambda: self._vieneu_log(f"✅ Model tải thành công!"))
+                self.after(0, lambda: self.btn_vieneu_generate.configure(state="normal"))
+                self.after(0, lambda: self.btn_vieneu_process.configure(state="normal"))
+                
+            except ImportError as e:
+                err_msg = str(e)
+                self.after(0, lambda: self._vieneu_log(f"❌ Thiếu thư viện: {err_msg}"))
+                self.after(0, lambda: self._vieneu_log("💡 Hãy cài đặt: pip install -r VieNeu-TTS/requirements.txt"))
+                self.after(0, lambda: self.vieneu_model_status.configure(text=f"❌ Lỗi import: {err_msg[:50]}", text_color="#ef4444"))
+            except Exception as e:
+                err_msg = str(e)
+                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {err_msg}"))
+                self.after(0, lambda: self.vieneu_model_status.configure(text=f"❌ Lỗi: {err_msg[:50]}", text_color="#ef4444"))
+            finally:
+                self.after(0, lambda: self.btn_vieneu_load.configure(state="normal"))
+        
+        threading.Thread(target=load_thread, daemon=True).start()
+
+    def _vieneu_encode_custom_voice(self):
+        """Encode custom voice for voice cloning"""
+        if not self.vieneu_model_loaded or self.vieneu_tts_instance is None:
+            messagebox.showerror("Lỗi", "Vui lòng tải model trước!")
+            return
+        
+        audio_path = self.vieneu_custom_audio_entry.get().strip()
+        ref_text = self.vieneu_custom_text_input.get("1.0", "end").strip()
+        
+        if not audio_path or not os.path.exists(audio_path):
+            messagebox.showerror("Lỗi", "Vui lòng chọn file audio mẫu!")
+            return
+        
+        if not ref_text or ref_text == "Nhập nội dung lời thoại trong file audio mẫu...":
+            messagebox.showerror("Lỗi", "Vui lòng nhập nội dung lời thoại mẫu!")
+            return
+        
+        self._vieneu_log(f"🔧 Đang mã hóa giọng mẫu: {os.path.basename(audio_path)}")
+        self.vieneu_custom_status.configure(text="⏳ Đang xử lý...", text_color="#fbbf24")
+        
+        def encode_thread():
+            try:
+                import torch
+                ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
+                
+                if isinstance(ref_codes, torch.Tensor):
+                    ref_codes = ref_codes.cpu().numpy()
+                
+                self.vieneu_ref_codes = ref_codes
+                self.vieneu_ref_text = ref_text
+                self.vieneu_custom_ref_audio = audio_path
+                self.vieneu_custom_ref_text = ref_text
+                
+                self.after(0, lambda: self._vieneu_log("✅ Đã mã hóa giọng mẫu thành công!"))
+                self.after(0, lambda: self.vieneu_custom_status.configure(text="✅ Sẵn sàng clone giọng!", text_color="#22c55e"))
+                
+            except Exception as e:
+                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi mã hóa: {str(e)}"))
+                self.after(0, lambda: self.vieneu_custom_status.configure(text=f"❌ Lỗi: {str(e)[:30]}", text_color="#ef4444"))
+        
+        threading.Thread(target=encode_thread, daemon=True).start()
+
+    def _vieneu_generate(self):
+        """Generate audio using VieNeu-TTS"""
+        if not self.vieneu_model_loaded or self.vieneu_tts_instance is None:
+            messagebox.showerror("Lỗi", "Vui lòng tải model trước!")
+            return
+        
+        text = self.vieneu_text_input.get("1.0", "end").strip()
+        if not text:
+            messagebox.showerror("Lỗi", "Vui lòng nhập văn bản!")
+            return
+        
+        # Check voice mode
+        voice_mode = self.vieneu_voice_mode.get()
+        
+        if voice_mode == "preset":
+            voice_name = self.vieneu_selected_voice.get()
+            voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+            audio_path = voice_info.get("audio", "")
+            text_path = voice_info.get("text", "")
+            codes_path = voice_info.get("codes", "")
+            
+            if not os.path.exists(audio_path):
+                messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu: {audio_path}")
+                return
+        else:
+            # Custom voice - check if ref_codes is None or empty
+            if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
+                messagebox.showerror("Lỗi", "Vui lòng mã hóa giọng mẫu trước!")
+                return
+            voice_name = "Custom"
+        
+        self._vieneu_log(f"🎙️ Đang tạo audio với giọng: {voice_name}")
+        self._vieneu_log(f"📝 Text length: {len(text)} chars")
+        
+        self.btn_vieneu_generate.configure(state="disabled")
+        self.vieneu_status_lbl.configure(text="Đang xử lý...")
+        
+        def generate_thread():
+            try:
+                import torch
+                import numpy as np
+                import soundfile as sf
+                import tempfile
+                
+                # Get reference
+                if voice_mode == "preset":
+                    voice_info = VIENEU_VOICE_SAMPLES.get(self.vieneu_selected_voice.get(), {})
+                    audio_path = voice_info.get("audio", "")
+                    text_path = voice_info.get("text", "")
+                    codes_path = voice_info.get("codes", "")
+                    
+                    # Load reference text
+                    if os.path.exists(text_path):
+                        with open(text_path, "r", encoding="utf-8") as f:
+                            ref_text = f.read().strip()
+                    else:
+                        ref_text = ""
+                    
+                    # Load or encode reference codes
+                    codec_name = self.vieneu_codec_var.get()
+                    if "ONNX" in codec_name and os.path.exists(codes_path):
+                        self.after(0, lambda: self._vieneu_log("📦 Loading pre-encoded codes..."))
+                        try:
+                            ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
+                        except (RuntimeError, EOFError, FileNotFoundError) as e:
+                            self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ Không thể load codes file, encoding thay thế: {err}"))
+                            ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
+                    else:
+                        self.after(0, lambda: self._vieneu_log("🔧 Encoding reference audio..."))
+                        ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
+                else:
+                    ref_codes = self.vieneu_ref_codes
+                    ref_text = self.vieneu_ref_text
+                
+                if isinstance(ref_codes, torch.Tensor):
+                    ref_codes = ref_codes.cpu().numpy()
+                
+                # Split long text into chunks using local function
+                chunks = split_text_into_chunks(text, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
+                total_chunks = len(chunks)
+                
+                self.after(0, lambda: self._vieneu_log(f"📝 Chia thành {total_chunks} đoạn"))
+                
+                all_audio = []
+                sr = VIENEU_SAMPLE_RATE
+                silence_pad = np.zeros(int(sr * 0.15), dtype=np.float32)
+                
+                start_time = time.time()
+                
+                # Process chunks - chunks are TextChunk objects with .text attribute
+                for i, chunk in enumerate(chunks):
+                    self.after(0, lambda idx=i+1, total=total_chunks: self._vieneu_log(f"⏳ Đang xử lý đoạn {idx}/{total}..."))
+                    self.after(0, lambda idx=i+1, total=total_chunks: self.vieneu_status_lbl.configure(text=f"Đoạn {idx}/{total}"))
+                    
+                    # TextChunk has .text attribute
+                    chunk_text = chunk.text if hasattr(chunk, 'text') else str(chunk)
+                    wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                    
+                    if wav is not None and len(wav) > 0:
+                        all_audio.append(wav)
+                        if i < total_chunks - 1:
+                            all_audio.append(silence_pad)
+                
+                if not all_audio:
+                    self.after(0, lambda: self._vieneu_log("❌ Không tạo được audio!"))
+                    self.after(0, lambda: self.vieneu_status_lbl.configure(text="Lỗi!"))
+                    return
+                
+                # Concatenate all audio
+                final_wav = np.concatenate(all_audio)
+                
+                # Save to temp file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                    sf.write(tmp.name, final_wav, sr)
+                    self.vieneu_temp_audio = tmp.name
+                
+                process_time = time.time() - start_time
+                duration = len(final_wav) / sr
+                speed = duration / process_time if process_time > 0 else 0
+                
+                self.after(0, lambda: self._vieneu_log(f"✅ Hoàn tất! ({process_time:.2f}s, {speed:.2f}x realtime)"))
+                self.after(0, lambda: self.vieneu_status_lbl.configure(text="Hoàn thành!"))
+                self.after(0, lambda: self.btn_vieneu_play.configure(state="normal"))
+                self.after(0, lambda: self.btn_vieneu_save.configure(state="normal"))
+                
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {str(e)}"))
+                self.after(0, lambda: self.vieneu_status_lbl.configure(text="Lỗi!"))
+            finally:
+                self.after(0, lambda: self.btn_vieneu_generate.configure(state="normal"))
+        
+        threading.Thread(target=generate_thread, daemon=True).start()
+
+    def _vieneu_play(self):
+        """Play the generated VieNeu-TTS audio"""
+        if self.vieneu_temp_audio and os.path.exists(self.vieneu_temp_audio):
+            self.player.play(self.vieneu_temp_audio)
+            self._vieneu_log("▶ Đang phát audio...")
+
+    def _vieneu_stop_playback(self):
+        """Stop audio playback"""
+        self.player.stop()
+        self._vieneu_log("⏹ Đã dừng phát")
+
+    def _vieneu_save(self):
+        """Save the generated audio to file"""
+        if not self.vieneu_temp_audio or not os.path.exists(self.vieneu_temp_audio):
+            return
+        
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".wav",
+            filetypes=[("WAV files", "*.wav"), ("All files", "*.*")]
+        )
+        if file_path:
+            shutil.copy(self.vieneu_temp_audio, file_path)
+            self._vieneu_log(f"💾 Đã lưu: {file_path}")
+
+    def _vieneu_process_file(self):
+        """Process file/folder with VieNeu-TTS"""
+        if not self.vieneu_model_loaded or self.vieneu_tts_instance is None:
+            messagebox.showerror("Lỗi", "Vui lòng tải model trước!")
+            return
+        
+        input_path = self.vieneu_file_entry.get().strip()
+        output_dir = self.vieneu_output_entry.get().strip()
+        
+        if not input_path or not os.path.exists(input_path):
+            messagebox.showerror("Lỗi", "Vui lòng chọn file hoặc thư mục!")
+            return
+        
+        if not output_dir:
+            messagebox.showerror("Lỗi", "Vui lòng chọn thư mục output!")
+            return
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Get voice settings
+        voice_mode = self.vieneu_voice_mode.get()
+        merge_after = self.vieneu_merge_var.get()
+        delete_chunks = self.vieneu_delete_chunks_var.get()
+        
+        self.vieneu_processing = True
+        self.btn_vieneu_process.configure(state="disabled")
+        self.btn_vieneu_stop_process.configure(state="normal")
+        self.vieneu_progress.set(0)
+        
+        threading.Thread(
+            target=self._vieneu_file_worker,
+            args=(input_path, output_dir, voice_mode, merge_after, delete_chunks),
+            daemon=True
+        ).start()
+
+    def _vieneu_file_worker(self, input_path, output_dir, voice_mode, merge_after, delete_chunks):
+        """Worker thread for file processing"""
+        try:
+            import torch
+            import numpy as np
+            import soundfile as sf
+            
+            # Get reference voice
+            if voice_mode == "preset":
+                voice_name = self.vieneu_selected_voice.get()
+                voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+                audio_path = voice_info.get("audio", "")
+                text_path = voice_info.get("text", "")
+                codes_path = voice_info.get("codes", "")
+                
+                if os.path.exists(text_path):
+                    with open(text_path, "r", encoding="utf-8") as f:
+                        ref_text = f.read().strip()
+                else:
+                    ref_text = ""
+                
+                codec_name = self.vieneu_codec_var.get()
+                if "ONNX" in codec_name and os.path.exists(codes_path):
+                    try:
+                        ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
+                    except (RuntimeError, EOFError, FileNotFoundError) as e:
+                        self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ Không thể load codes file: {err}"))
+                        ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
+                else:
+                    ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
+            else:
+                # Check if ref_codes is None or empty
+                if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
+                    self.after(0, lambda: self._vieneu_log("❌ Chưa mã hóa giọng mẫu!"))
+                    return
+                ref_codes = self.vieneu_ref_codes
+                ref_text = self.vieneu_ref_text
+            
+            if isinstance(ref_codes, torch.Tensor):
+                ref_codes = ref_codes.cpu().numpy()
+            
+            # Determine files to process
+            if os.path.isdir(input_path):
+                txt_files = glob.glob(os.path.join(input_path, "*.txt"))
+                srt_files = glob.glob(os.path.join(input_path, "*.srt"))
+                all_files = sorted(txt_files + srt_files)
+            else:
+                all_files = [input_path]
+            
+            total_files = len(all_files)
+            if total_files == 0:
+                self.after(0, lambda: self._vieneu_log("❌ Không tìm thấy file nào!"))
+                return
+            
+            self.after(0, lambda: self._vieneu_log(f"🚀 Bắt đầu xử lý {total_files} file..."))
+            
+            sr = VIENEU_SAMPLE_RATE
+            silence_pad = np.zeros(int(sr * 0.15), dtype=np.float32)
+            ffmpeg_path = getattr(self, 'ffmpeg_path', get_default_ffmpeg_path())
+            
+            for file_idx, file_path in enumerate(all_files):
+                if not self.vieneu_processing:
+                    self.after(0, lambda: self._vieneu_log("⏹ Đã dừng bởi người dùng"))
+                    break
+                
+                file_name = os.path.basename(file_path)
+                base_name = os.path.splitext(file_name)[0]
+                
+                self.after(0, lambda f=file_name, i=file_idx+1, t=total_files: 
+                          self._vieneu_log(f"\n📄 [{i}/{t}] Xử lý: {f}"))
+                
+                try:
+                    # Read file content
+                    ext = os.path.splitext(file_path)[1].lower()
+                    if ext == '.srt':
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        subs = parse_srt(content)
+                        # SRT subtitles are strings, create list of strings
+                        text_items = [sub.text for sub in subs]
+                        is_text_chunk = False
+                    else:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        # Clean and split using local function - returns TextChunk objects
+                        cleaned = clean_text_for_tts(content)
+                        text_items = split_text_into_chunks(cleaned, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
+                        is_text_chunk = True
+                    
+                    if not text_items:
+                        self.after(0, lambda: self._vieneu_log("  ⚠️ File trống, bỏ qua"))
+                        continue
+                    
+                    self.after(0, lambda c=len(text_items): self._vieneu_log(f"  📝 {c} đoạn"))
+                    
+                    # Process chunks
+                    all_audio = []
+                    chunk_files = []
+                    temp_dir = os.path.join(output_dir, f"_temp_{base_name}")
+                    os.makedirs(temp_dir, exist_ok=True)
+                    
+                    for i, chunk_item in enumerate(text_items):
+                        if not self.vieneu_processing:
+                            break
+                        
+                        # Handle both TextChunk objects and plain strings
+                        if is_text_chunk and hasattr(chunk_item, 'text'):
+                            chunk_text = chunk_item.text
+                        else:
+                            chunk_text = str(chunk_item)
+                        
+                        try:
+                            wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                            
+                            if wav is not None and len(wav) > 0:
+                                # Save chunk
+                                chunk_file = os.path.join(temp_dir, f"chunk_{i:04d}.wav")
+                                sf.write(chunk_file, wav, sr)
+                                chunk_files.append(chunk_file)
+                                all_audio.append(wav)
+                                if i < len(text_items) - 1:
+                                    all_audio.append(silence_pad)
+                        except Exception as e:
+                            self.after(0, lambda err=str(e), idx=i: self._vieneu_log(f"  ⚠️ Chunk [{idx}] lỗi: {err}"))
+                    
+                    # Merge if requested
+                    if merge_after and all_audio:
+                        output_file = os.path.join(output_dir, f"{base_name}.wav")
+                        final_wav = np.concatenate(all_audio)
+                        sf.write(output_file, final_wav, sr)
+                        self.after(0, lambda f=output_file: self._vieneu_log(f"  ✅ Đã tạo: {os.path.basename(f)}"))
+                        
+                        # Clean up chunks
+                        if delete_chunks:
+                            for cf in chunk_files:
+                                try:
+                                    os.remove(cf)
+                                except OSError:
+                                    pass
+                            try:
+                                os.rmdir(temp_dir)
+                            except OSError:
+                                pass
+                    elif chunk_files:
+                        self.after(0, lambda n=len(chunk_files): self._vieneu_log(f"  ✅ Đã tạo {n} chunks"))
+                    
+                except Exception as e:
+                    self.after(0, lambda err=str(e): self._vieneu_log(f"  ❌ Lỗi: {err}"))
+                
+                # Update progress
+                progress = (file_idx + 1) / total_files
+                self.after(0, lambda p=progress: self.vieneu_progress.set(p))
+                self.after(0, lambda i=file_idx+1, t=total_files: 
+                          self.vieneu_file_status.configure(text=f"File {i}/{t}"))
+            
+            self.after(0, lambda: self._vieneu_log(f"\n{'='*40}"))
+            self.after(0, lambda: self._vieneu_log(f"✅ Hoàn thành!"))
+            self.after(0, lambda: self._vieneu_log(f"📁 Output: {output_dir}"))
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {str(e)}"))
+        finally:
+            self.vieneu_processing = False
+            self.after(0, lambda: self.btn_vieneu_process.configure(state="normal"))
+            self.after(0, lambda: self.btn_vieneu_stop_process.configure(state="disabled"))
+            self.after(0, lambda: self.vieneu_file_status.configure(text="Hoàn thành!"))
+
+    def _vieneu_stop_processing(self):
+        """Stop file processing"""
+        self.vieneu_processing = False
+        self._vieneu_log("⏹ Đang dừng...")
 
     # ==========================================================================
     # TAB: ĐỌC VOICE KỊCH BẢN (Script Reader)

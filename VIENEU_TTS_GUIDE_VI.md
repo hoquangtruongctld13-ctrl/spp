@@ -529,14 +529,91 @@ codec_configs:
 
 ### Lỗi 3: "Failed to import llama_cpp"
 
-**Nguyên nhân:** Chưa cài llama-cpp-python hoặc cài sai version
+**Nguyên nhân:** Chưa cài llama-cpp-python hoặc cài sai version. Thư viện này cần được build từ source hoặc cài từ wheel phù hợp với hệ thống.
 
-**Giải pháp:**
+**Giải pháp chi tiết theo hệ điều hành:**
+
+#### 🔹 Windows:
+
+**Bước 1: Cài Visual Studio Build Tools (BẮT BUỘC)**
+1. Tải từ: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+2. Chạy file cài đặt
+3. Chọn "Desktop development with C++" workload
+4. Click Install và chờ cài đặt hoàn tất
+5. Khởi động lại máy tính
+
+**Bước 2: Cài llama-cpp-python**
 ```bash
-# Cài lại llama-cpp-python
-pip uninstall llama-cpp-python
+# Gỡ cài đặt phiên bản cũ (nếu có)
+pip uninstall llama-cpp-python -y
+
+# Cài đặt mới
 pip install llama-cpp-python --force-reinstall
 ```
+
+**Nếu vẫn lỗi - Cài từ wheel có sẵn (khuyến nghị):**
+```bash
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+```
+
+**Với UV Package Manager:**
+```bash
+uv pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+```
+
+#### 🔹 Linux (Ubuntu/Debian):
+
+```bash
+# Cài đặt các dependencies cần thiết
+sudo apt update
+sudo apt install build-essential cmake python3-dev -y
+
+# Gỡ cài đặt phiên bản cũ (nếu có)
+pip uninstall llama-cpp-python -y
+
+# Cài đặt mới
+pip install llama-cpp-python --force-reinstall
+```
+
+**Nếu vẫn lỗi:**
+```bash
+# Cài từ wheel có sẵn
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+```
+
+#### 🔹 macOS:
+
+```bash
+# Cài đặt Xcode Command Line Tools
+xcode-select --install
+
+# Cài đặt cmake (nếu chưa có)
+brew install cmake
+
+# Gỡ cài đặt phiên bản cũ (nếu có)
+pip uninstall llama-cpp-python -y
+
+# Cài đặt mới
+pip install llama-cpp-python --force-reinstall
+```
+
+#### 🔹 Các lỗi thường gặp khi cài llama-cpp-python:
+
+| Lỗi | Nguyên nhân | Giải pháp |
+|-----|-------------|-----------|
+| `error: Microsoft Visual C++ 14.0 is required` | Thiếu Visual Studio Build Tools | Cài Visual Studio Build Tools với C++ workload |
+| `CMake Error` | Thiếu CMake | `pip install cmake` hoặc cài từ website |
+| `No matching distribution found` | Phiên bản Python không tương thích | Sử dụng Python 3.12.x |
+| `Building wheel failed` | Thiếu compiler | Xem hướng dẫn cài Build Tools ở trên |
+
+#### 🔹 Kiểm tra cài đặt thành công:
+
+```python
+# Mở Python shell và chạy:
+python -c "from llama_cpp import Llama; print('llama_cpp installed successfully!')"
+```
+
+Nếu không có lỗi, llama-cpp-python đã được cài đặt thành công.
 
 ---
 

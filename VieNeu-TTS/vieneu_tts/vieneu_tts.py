@@ -129,8 +129,18 @@ class VieNeuTTS:
                 from llama_cpp import Llama
             except ImportError as e:
                 raise ImportError(
-                    "Failed to import `llama_cpp`. "
-                    "Xem hướng dẫn cài đặt llama_cpp_python tại: https://github.com/pnnbao97/VieNeu-TTS"
+                    "Lỗi khi tải model: Failed to import llama_cpp.\n\n"
+                    "HƯỚNG DẪN CÀI ĐẶT llama-cpp-python:\n"
+                    "=====================================\n\n"
+                    "🔹 WINDOWS:\n"
+                    "   1. Cài Visual Studio Build Tools (C++ build tools)\n"
+                    "   2. pip install llama-cpp-python --force-reinstall\n\n"
+                    "🔹 LINUX/macOS:\n"
+                    "   pip install llama-cpp-python --force-reinstall\n\n"
+                    "🔹 NẾU VẪN LỖI - Cài từ wheel có sẵn (khuyến nghị):\n"
+                    "   pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu\n\n"
+                    "📖 Chi tiết tại: https://github.com/pnnbao97/VieNeu-TTS\n"
+                    "   hoặc xem file VIENEU_TTS_GUIDE_VI.md"
                 ) from e
             self.backbone = Llama.from_pretrained(
                 repo_id=backbone_repo,

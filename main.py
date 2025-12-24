@@ -406,6 +406,35 @@ MIN_AUDIO_FILE_SIZE = 100  # Minimum bytes for a valid audio file
 # Error message display
 ERROR_MSG_MAX_LENGTH = 50  # Maximum characters to display in error messages
 
+# LMDeploy installation guide message
+LMDEPLOY_INSTALL_GUIDE = """
+📖 HƯỚNG DẪN CÀI ĐẶT LMDEPLOY:
+===============================
+LMDeploy giúp tăng tốc TTS trên GPU NVIDIA.
+
+🔹 YÊU CẦU:
+   - NVIDIA GPU với CUDA support
+   - NVIDIA GPU Computing Toolkit (CUDA Toolkit 12.8+)
+   - Python 3.12
+
+🔹 BƯỚC 1: Cài NVIDIA GPU Computing Toolkit
+   Tải từ: https://developer.nvidia.com/cuda-downloads
+
+🔹 BƯỚC 2: Cài đặt lmdeploy (chọn 1 trong 2 cách):
+
+   Windows:
+   pip install https://github.com/InternLM/lmdeploy/releases/download/v0.11.0/lmdeploy-0.11.0+cu128-cp312-cp312-win_amd64.whl
+
+   Linux:
+   pip install lmdeploy==0.11.0
+
+🔹 THAY THẾ: Dùng model GGUF (không cần lmdeploy)
+   - Chọn "VN TTS Q4 (Nhanh)" hoặc "VN TTS Q8 (CPU/GPU)"
+   - Hỗ trợ streaming, chạy nhanh trên CPU lẫn GPU
+
+📖 Chi tiết: https://github.com/pnnbao97/VieNeu-TTS
+"""
+
 
 # =============================================================================
 # PATH UTILITIES
@@ -3654,9 +3683,10 @@ class StudioGUI(ctk.CTk):
         model_frame = ctk.CTkFrame(content_scroll, fg_color="#1f2937")
         model_frame.pack(fill="x", padx=10, pady=5)
         
-        # Backbone selection
+        # Backbone selection - use saved setting if available
         ctk.CTkLabel(model_frame, text="Backbone Model:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
-        self.vieneu_backbone_var = ctk.StringVar(value="VN TTS Q4 (Nhanh)")
+        saved_backbone = getattr(self, 'vieneu_backbone', "VN TTS Q4 (Nhanh)")
+        self.vieneu_backbone_var = ctk.StringVar(value=saved_backbone)
         self.vieneu_backbone_combo = ctk.CTkComboBox(
             model_frame, 
             values=list(VIENEU_BACKBONE_CONFIGS.keys()),
@@ -3665,17 +3695,19 @@ class StudioGUI(ctk.CTk):
         )
         self.vieneu_backbone_combo.pack(fill="x", padx=10, pady=2)
         
-        # Backbone description
+        # Backbone description - use saved backbone's description
+        backbone_desc = VIENEU_BACKBONE_CONFIGS.get(saved_backbone, {}).get("description", "")
         self.vieneu_backbone_desc = ctk.CTkLabel(
             model_frame, 
-            text=VIENEU_BACKBONE_CONFIGS["VN TTS Q4 (Nhanh)"]["description"],
+            text=backbone_desc,
             font=("Roboto", 9), text_color="gray"
         )
         self.vieneu_backbone_desc.pack(anchor="w", padx=10, pady=2)
         
-        # Codec selection
+        # Codec selection - use saved setting if available
         ctk.CTkLabel(model_frame, text="Audio Codec:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
-        self.vieneu_codec_var = ctk.StringVar(value="NeuCodec (Standard)")
+        saved_codec = getattr(self, 'vieneu_codec', "NeuCodec (Standard)")
+        self.vieneu_codec_var = ctk.StringVar(value=saved_codec)
         self.vieneu_codec_combo = ctk.CTkComboBox(
             model_frame, 
             values=list(VIENEU_CODEC_CONFIGS.keys()),
@@ -3683,9 +3715,10 @@ class StudioGUI(ctk.CTk):
         )
         self.vieneu_codec_combo.pack(fill="x", padx=10, pady=2)
         
-        # Device selection
+        # Device selection - use saved setting if available
         ctk.CTkLabel(model_frame, text="Device:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
-        self.vieneu_device_var = ctk.StringVar(value="Auto")
+        saved_device = getattr(self, 'vieneu_device', "Auto")
+        self.vieneu_device_var = ctk.StringVar(value=saved_device)
         device_frame = ctk.CTkFrame(model_frame, fg_color="transparent")
         device_frame.pack(fill="x", padx=10, pady=2)
         
@@ -4313,7 +4346,22 @@ class StudioGUI(ctk.CTk):
                         )
                         self.vieneu_using_fast = True
                     except Exception as e:
-                        self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ LMDeploy không khả dụng: {err}"))
+                        err_str = str(e)
+                        # Show user-friendly message with installation guide
+                        if "lmdeploy" in err_str.lower() or "failed to import" in err_str.lower():
+                            self.after(0, lambda: self._vieneu_log("⚠️ LMDeploy không khả dụng"))
+                            self.after(0, lambda: self._vieneu_log("💡 Đề xuất: Dùng model GGUF để có streaming và tốc độ tốt hơn"))
+                            self.after(0, lambda: self._vieneu_log("   → Chọn 'VN TTS Q4 (Nhanh)' hoặc 'VN TTS Q8 (CPU/GPU)'"))
+                            self.after(0, lambda: self._vieneu_log(""))
+                            # Print full guide to console for advanced users
+                            print(LMDEPLOY_INSTALL_GUIDE)
+                        elif "cuda" in err_str.lower() or "cuda_path" in err_str.lower():
+                            self.after(0, lambda: self._vieneu_log("⚠️ CUDA không khả dụng"))
+                            self.after(0, lambda: self._vieneu_log("💡 Cần cài NVIDIA GPU Computing Toolkit:"))
+                            self.after(0, lambda: self._vieneu_log("   → https://developer.nvidia.com/cuda-downloads"))
+                        else:
+                            self.after(0, lambda err=err_str[:100]: self._vieneu_log(f"⚠️ LMDeploy lỗi: {err}"))
+                        
                         self.after(0, lambda: self._vieneu_log("📦 Chuyển sang backend chuẩn..."))
                         self.vieneu_tts_instance = VieNeuTTS(
                             backbone_repo=backbone_repo,
@@ -4571,9 +4619,13 @@ class StudioGUI(ctk.CTk):
                 start_time = time.time()
                 all_audio = []
                 
-                # Use streaming if enabled and available
-                if use_streaming:
-                    self.after(0, lambda: self._vieneu_log("⚡ Bắt đầu streaming..."))
+                # Check if this is a GGUF model (supports streaming) or standard model
+                is_gguf_model = "gguf" in backbone_name.lower()
+                
+                # Use streaming if enabled and supported
+                # Streaming only works for GGUF models, not for standard PyTorch/LMDeploy models
+                if use_streaming and is_gguf_model:
+                    self.after(0, lambda: self._vieneu_log("⚡ Bắt đầu streaming (GGUF)..."))
                     self.after(0, lambda: self.vieneu_status_lbl.configure(text="Streaming..."))
                     
                     # For streaming, we process text as a whole or in larger chunks
@@ -4589,20 +4641,26 @@ class StudioGUI(ctk.CTk):
                         
                         chunk_audio = []
                         try:
-                            # Check if infer_stream method exists before calling
+                            # Check if infer_stream method exists and model is quantized
                             if not hasattr(self.vieneu_tts_instance, 'infer_stream'):
                                 raise AttributeError("infer_stream method not available")
+                            
+                            # Check if model is quantized (GGUF) - streaming only works for GGUF
+                            if hasattr(self.vieneu_tts_instance, '_is_quantized_model') and not self.vieneu_tts_instance._is_quantized_model:
+                                raise NotImplementedError("Streaming only supported for GGUF models")
                             
                             for audio_chunk in self.vieneu_tts_instance.infer_stream(chunk_text, ref_codes, ref_text):
                                 if audio_chunk is not None and len(audio_chunk) > 0:
                                     chunk_audio.append(audio_chunk)
-                        except (AttributeError, NotImplementedError, Exception) as stream_err:
-                            # Log appropriate message based on error type
-                            if isinstance(stream_err, (AttributeError, NotImplementedError)):
-                                self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming không khả dụng, dùng chế độ thường"))
-                            else:
-                                self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming lỗi, thử non-streaming: {err}"))
-                            # Fallback to non-streaming
+                        except (AttributeError, NotImplementedError) as stream_err:
+                            # For non-GGUF models, streaming is not supported - use normal inference
+                            self.after(0, lambda: self._vieneu_log(f"ℹ️ Model này không hỗ trợ streaming, dùng chế độ thường"))
+                            wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                            if wav is not None and len(wav) > 0:
+                                chunk_audio = [wav]
+                        except Exception as stream_err:
+                            # Other errors - log and fallback
+                            self.after(0, lambda err=str(stream_err)[:80]: self._vieneu_log(f"⚠️ Streaming lỗi: {err}"))
                             wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
                             if wav is not None and len(wav) > 0:
                                 chunk_audio = [wav]
@@ -4614,7 +4672,13 @@ class StudioGUI(ctk.CTk):
                             all_audio.append(combined)
                             if chunk_idx < total_chunks - 1:
                                 all_audio.append(silence_pad)
-                else:
+                elif use_streaming and not is_gguf_model:
+                    # User enabled streaming but model doesn't support it - inform and use normal mode
+                    self.after(0, lambda: self._vieneu_log("ℹ️ Model GPU không hỗ trợ streaming, dùng chế độ thường"))
+                    self.after(0, lambda: self._vieneu_log("💡 Đề xuất: Dùng model GGUF (Q4/Q8) để có streaming"))
+                    use_streaming = False  # Fall through to non-streaming code below
+                
+                if not use_streaming:
                     # Split long text into chunks using local function
                     chunks = split_text_into_chunks(text, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
                     total_chunks = len(chunks)
@@ -7398,6 +7462,10 @@ class StudioGUI(ctk.CTk):
                     self.lt_chunk_v2_enabled = data.get("lt_chunk_v2_enabled", False)
                     # Gemini TTS file chunking settings
                     self.gemini_chunk_size = data.get("gemini_chunk_size", GEMINI_DEFAULT_CHUNK_SIZE)
+                    # VieNeu-TTS model settings
+                    self.vieneu_backbone = data.get("vieneu_backbone", "VN TTS Q4 (Nhanh)")
+                    self.vieneu_codec = data.get("vieneu_codec", "NeuCodec (Standard)")
+                    self.vieneu_device = data.get("vieneu_device", "Auto")
             except Exception as e:
                 print(f"Error loading settings: {e}")
 
@@ -7429,6 +7497,13 @@ class StudioGUI(ctk.CTk):
                 self.gemini_chunk_size = int(self.gemini_chunk_size_entry.get().strip() or GEMINI_DEFAULT_CHUNK_SIZE)
             except ValueError:
                 self.gemini_chunk_size = GEMINI_DEFAULT_CHUNK_SIZE
+        # Get VieNeu-TTS settings from UI
+        if hasattr(self, 'vieneu_backbone_var'):
+            self.vieneu_backbone = self.vieneu_backbone_var.get()
+        if hasattr(self, 'vieneu_codec_var'):
+            self.vieneu_codec = self.vieneu_codec_var.get()
+        if hasattr(self, 'vieneu_device_var'):
+            self.vieneu_device = self.vieneu_device_var.get()
         
         data = {
             "api_keys": self.api_key_content,
@@ -7444,7 +7519,10 @@ class StudioGUI(ctk.CTk):
             "ffmpeg_path": self.ffmpeg_path,
             "gemini_chunk_v2_enabled": self.gemini_chunk_v2_enabled,
             "lt_chunk_v2_enabled": self.lt_chunk_v2_enabled,
-            "gemini_chunk_size": self.gemini_chunk_size
+            "gemini_chunk_size": self.gemini_chunk_size,
+            "vieneu_backbone": self.vieneu_backbone,
+            "vieneu_codec": self.vieneu_codec,
+            "vieneu_device": self.vieneu_device
         }
         try:
             with open(self.settings_file, "w", encoding="utf-8") as f:

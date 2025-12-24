@@ -39,8 +39,11 @@
 | VieNeu-TTS-q4-gguf | GGUF Q4 | CPU/GPU | ⭐⭐⭐ | Rất nhanh | ✅ |
 
 **Khuyến nghị:**
-- **Người dùng GPU**: Sử dụng `VieNeu-TTS (GPU)` để có chất lượng tốt nhất
+- **Người dùng GPU muốn streaming**: Sử dụng `VieNeu-TTS-q4-gguf` hoặc `VieNeu-TTS-q8-gguf` - hỗ trợ streaming, tốc độ nhanh
+- **Người dùng GPU muốn chất lượng cao nhất**: Sử dụng `VieNeu-TTS (GPU)` với lmdeploy - không hỗ trợ streaming
 - **Người dùng CPU**: Sử dụng `VieNeu-TTS-q4-gguf` để inference nhanh nhất
+
+> ⚠️ **Lưu ý về Streaming**: Chỉ các model GGUF (Q4/Q8) hỗ trợ streaming. Model GPU (PyTorch) không hỗ trợ streaming.
 
 ---
 

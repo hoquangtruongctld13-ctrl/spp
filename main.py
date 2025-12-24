@@ -3920,13 +3920,14 @@ class StudioGUI(ctk.CTk):
         )
         self.btn_vieneu_save.pack(side="left", padx=5)
 
-        # Streaming option (GPU only)
+        # Streaming option (GPU only) - disabled by default, enabled after GPU model loads
         self.vieneu_streaming_var = ctk.BooleanVar(value=False)
         self.vieneu_streaming_cb = ctk.CTkCheckBox(
             btn_frame, 
             text="⚡ Streaming (GPU)", 
             variable=self.vieneu_streaming_var,
-            font=("Roboto", 10)
+            font=("Roboto", 10),
+            state="disabled"  # Will be enabled when GPU model is loaded
         )
         self.vieneu_streaming_cb.pack(side="left", padx=10)
 
@@ -4306,6 +4307,14 @@ class StudioGUI(ctk.CTk):
                 self.after(0, lambda: self._vieneu_log(f"✅ Model tải thành công!"))
                 self.after(0, lambda: self.btn_vieneu_generate.configure(state="normal"))
                 self.after(0, lambda: self.btn_vieneu_process.configure(state="normal"))
+                
+                # Enable streaming checkbox if GPU mode (FastVieNeuTTS) is active
+                if self.vieneu_using_fast:
+                    self.after(0, lambda: self.vieneu_streaming_cb.configure(state="normal"))
+                    self.after(0, lambda: self._vieneu_log("⚡ Streaming khả dụng với GPU"))
+                else:
+                    self.after(0, lambda: self.vieneu_streaming_cb.configure(state="disabled"))
+                    self.after(0, lambda: self.vieneu_streaming_var.set(False))
                 
             except ImportError as e:
                 err_msg = str(e)

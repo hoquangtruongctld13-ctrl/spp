@@ -4481,10 +4481,10 @@ class StudioGUI(ctk.CTk):
         self._vieneu_log(f"📝 Text length: {len(text)} chars")
         
         # Check if streaming is enabled and supported
-        # Streaming is supported by: FastVieNeuTTS (GPU+LMDeploy) and VieNeuTTS with GGUF models
+        # Use backbone configuration to determine streaming support
         backbone_name = self.vieneu_backbone_var.get()
-        is_gguf = "q4" in backbone_name.lower() or "q8" in backbone_name.lower()
-        streaming_supported = self.vieneu_using_fast or is_gguf
+        backbone_config = VIENEU_BACKBONE_CONFIGS.get(backbone_name, {})
+        streaming_supported = backbone_config.get("supports_streaming", False) or self.vieneu_using_fast
         use_streaming = self.vieneu_streaming_var.get() and streaming_supported
         if use_streaming:
             self._vieneu_log("⚡ Streaming mode enabled")
@@ -4554,9 +4554,19 @@ class StudioGUI(ctk.CTk):
                         
                         chunk_audio = []
                         try:
+                            # Check if infer_stream method exists before calling
+                            if not hasattr(self.vieneu_tts_instance, 'infer_stream'):
+                                raise AttributeError("infer_stream method not available")
+                            
                             for audio_chunk in self.vieneu_tts_instance.infer_stream(chunk_text, ref_codes, ref_text):
                                 if audio_chunk is not None and len(audio_chunk) > 0:
                                     chunk_audio.append(audio_chunk)
+                        except (AttributeError, NotImplementedError) as stream_err:
+                            self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming không khả dụng, dùng chế độ thường: {err}"))
+                            # Fallback to non-streaming
+                            wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                            if wav is not None:
+                                chunk_audio = [wav]
                         except Exception as stream_err:
                             self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming lỗi, thử non-streaming: {err}"))
                             # Fallback to non-streaming

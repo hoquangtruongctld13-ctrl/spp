@@ -4243,7 +4243,7 @@ class StudioGUI(ctk.CTk):
                     codec_device = "cuda"
                     if not has_cuda:
                         self.after(0, lambda: self._vieneu_log("⚠️ torch.cuda.is_available()=False nhưng vẫn thử GPU..."))
-                        self.after(0, lambda: self._vieneu_log("   💡 Có thể cần: pip install torch --index-url https://download.pytorch.org/whl/cu121"))
+                        self.after(0, lambda: self._vieneu_log("   💡 Nếu lỗi, cần cài PyTorch CUDA: xem pytorch.org/get-started"))
                 
                 # ONNX codec only runs on CPU
                 if "onnx" in codec_repo.lower():

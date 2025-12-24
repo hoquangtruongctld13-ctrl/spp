@@ -36,6 +36,30 @@ HƯỚNG DẪN CÀI ĐẶT llama-cpp-python:
 # Shared Utilities
 # ============================================================================
 
+def _clear_jinja2_template_cache():
+    """
+    Clear Jinja2 template cache to prevent "duplicate template name" error.
+    
+    This error occurs when loading HuggingFace Transformers models multiple times
+    in the same Python process. The tokenizer's chat_template gets registered with
+    Jinja2, and if you load the same model again without cleanup, you get the error.
+    """
+    try:
+        import jinja2
+        # Clear Jinja2 environment's template cache
+        # This is a workaround for the "duplicate template name" issue
+        env = jinja2.Environment()
+        if hasattr(env, 'cache') and env.cache is not None:
+            env.cache.clear()
+        
+        # Also try to clear the global template registry if it exists
+        # Different versions of jinja2 may store templates differently
+        if hasattr(jinja2, '_environment_cache'):
+            jinja2._environment_cache.clear()
+    except Exception:
+        pass  # Silently ignore if clearing fails
+
+
 def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
     """Linear overlap-add for smooth audio concatenation"""
     assert len(frames)
@@ -163,6 +187,10 @@ class VieNeuTTS:
             self._is_quantized_model = True
             
         else:
+            # Clear Jinja2 template cache to prevent "duplicate template name" error
+            # This is needed when loading the model multiple times in the same process
+            _clear_jinja2_template_cache()
+            
             from transformers import AutoTokenizer, AutoModelForCausalLM
             self.tokenizer = AutoTokenizer.from_pretrained(backbone_repo)
             self.backbone = AutoModelForCausalLM.from_pretrained(backbone_repo).to(
@@ -498,6 +526,10 @@ class FastVieNeuTTS:
     def _load_backbone_lmdeploy(self, repo, memory_util, tp, enable_prefix_caching, quant_policy):
         """Load backbone using LMDeploy's TurbomindEngine"""
         print(f"Loading backbone with LMDeploy from: {repo}")
+        
+        # Clear Jinja2 template cache to prevent "duplicate template name" error
+        # This is needed when loading the model multiple times in the same process
+        _clear_jinja2_template_cache()
         
         try:
             from lmdeploy import pipeline, TurbomindEngineConfig, GenerationConfig

@@ -4003,6 +4003,37 @@ class StudioGUI(ctk.CTk):
         count = len(text)
         self.vieneu_char_count.configure(text=f"Ký tự: {count}")
 
+    def _vieneu_validate_voice_settings(self):
+        """
+        Validate voice settings before generating.
+        Returns (success, voice_mode, voice_name, error_message) tuple.
+        If success is False, error_message contains the error to show.
+        """
+        voice_mode = self.vieneu_voice_mode.get()
+        self._vieneu_log(f"📋 Chế độ giọng: {voice_mode}")
+        
+        if voice_mode == "preset":
+            voice_name = self.vieneu_selected_voice.get()
+            voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+            audio_path = voice_info.get("audio", "")
+            
+            self._vieneu_log(f"📁 Đang tìm file mẫu: {voice_name}")
+            
+            if not os.path.exists(audio_path):
+                self._vieneu_log(f"❌ Không tìm thấy: {audio_path}")
+                error_msg = f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục VieNeu-TTS/sample/ có tồn tại không\n2. File audio mẫu có đúng tên không"
+                return (False, voice_mode, voice_name, error_msg)
+            
+            return (True, voice_mode, voice_name, None)
+        else:
+            # Custom voice - validate ref_codes
+            if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
+                self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu")
+                error_msg = "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút '🔧 Mã hóa giọng mẫu'\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset."
+                return (False, voice_mode, "Custom", error_msg)
+            
+            return (True, voice_mode, "Custom", None)
+
     def _vieneu_browse_custom_audio(self):
         """Browse for custom voice audio file"""
         file_path = filedialog.askopenfilename(
@@ -4237,30 +4268,11 @@ class StudioGUI(ctk.CTk):
             messagebox.showerror("Lỗi", "Vui lòng nhập văn bản!")
             return
         
-        # Check voice mode
-        voice_mode = self.vieneu_voice_mode.get()
-        self._vieneu_log(f"📋 Chế độ giọng: {voice_mode}")
-        
-        if voice_mode == "preset":
-            voice_name = self.vieneu_selected_voice.get()
-            voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
-            audio_path = voice_info.get("audio", "")
-            text_path = voice_info.get("text", "")
-            codes_path = voice_info.get("codes", "")
-            
-            self._vieneu_log(f"📁 Đang tìm file mẫu: {voice_name}")
-            
-            if not os.path.exists(audio_path):
-                self._vieneu_log(f"❌ Không tìm thấy: {audio_path}")
-                messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục VieNeu-TTS/sample/ có tồn tại không\n2. File audio mẫu có đúng tên không")
-                return
-        else:
-            # Custom voice - check if ref_codes is None or empty
-            if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
-                self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu")
-                messagebox.showerror("Lỗi", "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút '🔧 Mã hóa giọng mẫu'\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset.")
-                return
-            voice_name = "Custom"
+        # Validate voice settings
+        success, voice_mode, voice_name, error_msg = self._vieneu_validate_voice_settings()
+        if not success:
+            messagebox.showerror("Lỗi", error_msg)
+            return
         
         self._vieneu_log(f"🎙️ Đang tạo audio với giọng: {voice_name}")
         self._vieneu_log(f"📝 Text length: {len(text)} chars")
@@ -4409,26 +4421,11 @@ class StudioGUI(ctk.CTk):
         
         os.makedirs(output_dir, exist_ok=True)
         
-        # Get voice settings
-        voice_mode = self.vieneu_voice_mode.get()
-        self._vieneu_log(f"📋 Chế độ giọng: {voice_mode}")
-        
-        # Validate voice mode settings before starting
-        if voice_mode == "preset":
-            voice_name = self.vieneu_selected_voice.get()
-            voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
-            audio_path = voice_info.get("audio", "")
-            
-            if not os.path.exists(audio_path):
-                self._vieneu_log(f"❌ Không tìm thấy: {audio_path}")
-                messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục VieNeu-TTS/sample/ có tồn tại không\n2. File audio mẫu có đúng tên không")
-                return
-        else:
-            # Custom voice - validate ref_codes
-            if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
-                self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu")
-                messagebox.showerror("Lỗi", "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút '🔧 Mã hóa giọng mẫu'\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset.")
-                return
+        # Validate voice settings before starting
+        success, voice_mode, voice_name, error_msg = self._vieneu_validate_voice_settings()
+        if not success:
+            messagebox.showerror("Lỗi", error_msg)
+            return
         
         merge_after = self.vieneu_merge_var.get()
         delete_chunks = self.vieneu_delete_chunks_var.get()
@@ -4451,17 +4448,13 @@ class StudioGUI(ctk.CTk):
             import numpy as np
             import soundfile as sf
             
-            self.after(0, lambda m=voice_mode: self._vieneu_log(f"📋 Chế độ giọng: {m}"))
-            
-            # Get reference voice
+            # Get reference voice (validation already done in _vieneu_process_file)
             if voice_mode == "preset":
                 voice_name = self.vieneu_selected_voice.get()
                 voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
                 audio_path = voice_info.get("audio", "")
                 text_path = voice_info.get("text", "")
                 codes_path = voice_info.get("codes", "")
-                
-                self.after(0, lambda n=voice_name: self._vieneu_log(f"📁 Đang tìm file mẫu: {n}"))
                 
                 if os.path.exists(text_path):
                     with open(text_path, "r", encoding="utf-8") as f:
@@ -4479,10 +4472,7 @@ class StudioGUI(ctk.CTk):
                 else:
                     ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
             else:
-                # Check if ref_codes is None or empty
-                if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
-                    self.after(0, lambda: self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu"))
-                    return
+                # Custom voice (already validated)
                 ref_codes = self.vieneu_ref_codes
                 ref_text = self.vieneu_ref_text
             

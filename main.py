@@ -4239,6 +4239,7 @@ class StudioGUI(ctk.CTk):
         
         # Check voice mode
         voice_mode = self.vieneu_voice_mode.get()
+        self._vieneu_log(f"📋 Chế độ giọng: {voice_mode}")
         
         if voice_mode == "preset":
             voice_name = self.vieneu_selected_voice.get()
@@ -4247,13 +4248,17 @@ class StudioGUI(ctk.CTk):
             text_path = voice_info.get("text", "")
             codes_path = voice_info.get("codes", "")
             
+            self._vieneu_log(f"📁 Đang tìm file mẫu: {voice_name}")
+            
             if not os.path.exists(audio_path):
-                messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu: {audio_path}")
+                self._vieneu_log(f"❌ Không tìm thấy: {audio_path}")
+                messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục VieNeu-TTS/sample/ có tồn tại không\n2. File audio mẫu có đúng tên không")
                 return
         else:
             # Custom voice - check if ref_codes is None or empty
             if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
-                messagebox.showerror("Lỗi", "Vui lòng mã hóa giọng mẫu trước!")
+                self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu")
+                messagebox.showerror("Lỗi", "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút '🔧 Mã hóa giọng mẫu'\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset.")
                 return
             voice_name = "Custom"
         
@@ -4406,6 +4411,25 @@ class StudioGUI(ctk.CTk):
         
         # Get voice settings
         voice_mode = self.vieneu_voice_mode.get()
+        self._vieneu_log(f"📋 Chế độ giọng: {voice_mode}")
+        
+        # Validate voice mode settings before starting
+        if voice_mode == "preset":
+            voice_name = self.vieneu_selected_voice.get()
+            voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})
+            audio_path = voice_info.get("audio", "")
+            
+            if not os.path.exists(audio_path):
+                self._vieneu_log(f"❌ Không tìm thấy: {audio_path}")
+                messagebox.showerror("Lỗi", f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục VieNeu-TTS/sample/ có tồn tại không\n2. File audio mẫu có đúng tên không")
+                return
+        else:
+            # Custom voice - validate ref_codes
+            if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
+                self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu")
+                messagebox.showerror("Lỗi", "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút '🔧 Mã hóa giọng mẫu'\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset.")
+                return
+        
         merge_after = self.vieneu_merge_var.get()
         delete_chunks = self.vieneu_delete_chunks_var.get()
         
@@ -4427,6 +4451,8 @@ class StudioGUI(ctk.CTk):
             import numpy as np
             import soundfile as sf
             
+            self.after(0, lambda m=voice_mode: self._vieneu_log(f"📋 Chế độ giọng: {m}"))
+            
             # Get reference voice
             if voice_mode == "preset":
                 voice_name = self.vieneu_selected_voice.get()
@@ -4434,6 +4460,8 @@ class StudioGUI(ctk.CTk):
                 audio_path = voice_info.get("audio", "")
                 text_path = voice_info.get("text", "")
                 codes_path = voice_info.get("codes", "")
+                
+                self.after(0, lambda n=voice_name: self._vieneu_log(f"📁 Đang tìm file mẫu: {n}"))
                 
                 if os.path.exists(text_path):
                     with open(text_path, "r", encoding="utf-8") as f:
@@ -4453,7 +4481,7 @@ class StudioGUI(ctk.CTk):
             else:
                 # Check if ref_codes is None or empty
                 if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
-                    self.after(0, lambda: self._vieneu_log("❌ Chưa mã hóa giọng mẫu!"))
+                    self.after(0, lambda: self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu"))
                     return
                 ref_codes = self.vieneu_ref_codes
                 ref_text = self.vieneu_ref_text

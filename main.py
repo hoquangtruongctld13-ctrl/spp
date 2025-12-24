@@ -235,20 +235,30 @@ VIENEU_BACKBONE_CONFIGS = {
     "VieNeu-TTS (GPU)": {
         "repo": "pnnbao-ump/VieNeu-TTS",
         "supports_streaming": False,
-        "description": "Chất lượng cao nhất, yêu cầu GPU",
-        "requires_gpu": True
+        "description": "Chất lượng cao nhất, yêu cầu GPU (LMDeploy)",
+        "requires_gpu": True,
+        # GPU optimization settings
+        "memory_util": 0.5,  # GPU memory utilization (0.3-0.8)
+        "enable_prefix_caching": True,  # Speed up repeated generation
+        "quant_policy": 0,  # KV cache quantization: 0=off, 4=int4, 8=int8
     },
     "VieNeu-TTS-q8-gguf": {
         "repo": "pnnbao-ump/VieNeu-TTS-q8-gguf",
         "supports_streaming": True,
-        "description": "Cân bằng giữa chất lượng và tốc độ",
-        "requires_gpu": False
+        "description": "Cân bằng chất lượng/tốc độ (CPU/GPU)",
+        "requires_gpu": False,
+        # GGUF settings
+        "n_gpu_layers": -1,  # -1 = all layers on GPU if available
+        "flash_attn": True,  # Enable flash attention on GPU
     },
     "VieNeu-TTS-q4-gguf": {
         "repo": "pnnbao-ump/VieNeu-TTS-q4-gguf",
         "supports_streaming": True,
-        "description": "Nhẹ nhất, phù hợp CPU",
-        "requires_gpu": False
+        "description": "Nhanh nhất, nhẹ nhất (CPU tối ưu)",
+        "requires_gpu": False,
+        # GGUF settings
+        "n_gpu_layers": -1,  # -1 = all layers on GPU if available
+        "flash_attn": True,  # Enable flash attention on GPU
     },
 }
 
@@ -3694,6 +3704,18 @@ class StudioGUI(ctk.CTk):
         self.vieneu_batch_var = ctk.StringVar(value="8")
         ctk.CTkEntry(adv_frame, textvariable=self.vieneu_batch_var, width=50).pack(side="left")
         
+        # GPU Memory optimization slider
+        gpu_opt_frame = ctk.CTkFrame(model_frame, fg_color="transparent")
+        gpu_opt_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(gpu_opt_frame, text="GPU Memory:", font=("Roboto", 10)).pack(side="left", padx=5)
+        self.vieneu_memory_slider = ctk.CTkSlider(gpu_opt_frame, from_=0.3, to=0.8, number_of_steps=5, width=100)
+        self.vieneu_memory_slider.set(0.5)
+        self.vieneu_memory_slider.pack(side="left", padx=5)
+        self.vieneu_memory_lbl = ctk.CTkLabel(gpu_opt_frame, text="50%", font=("Roboto", 9), width=35)
+        self.vieneu_memory_lbl.pack(side="left")
+        self.vieneu_memory_slider.configure(command=lambda v: self.vieneu_memory_lbl.configure(text=f"{int(v*100)}%"))
+        
         # Load model button
         self.btn_vieneu_load = ctk.CTkButton(
             model_frame, 
@@ -3791,6 +3813,29 @@ class StudioGUI(ctk.CTk):
             text_color="gray"
         )
         self.vieneu_custom_status.pack(anchor="w")
+        
+        # Clone Voice button - appears after encoding
+        self.btn_vieneu_clone_now = ctk.CTkButton(
+            self.vieneu_custom_frame,
+            text="🎙️ TẠO AUDIO VỚI GIỌNG ĐÃ CLONE",
+            fg_color="#22c55e",
+            hover_color="#16a34a",
+            font=("Roboto", 12, "bold"),
+            state="disabled",
+            command=self._vieneu_generate
+        )
+        self.btn_vieneu_clone_now.pack(fill="x", pady=(10, 5))
+        
+        # Instruction label
+        self.vieneu_clone_instruction = ctk.CTkLabel(
+            self.vieneu_custom_frame,
+            text="📌 Bước tiếp theo: Nhập văn bản ở bên phải → Bấm nút trên để tạo audio",
+            font=("Roboto", 9),
+            text_color="#94a3b8",
+            wraplength=280
+        )
+        self.vieneu_clone_instruction.pack(anchor="w")
+        self.vieneu_clone_instruction.pack_forget()  # Hide initially
 
         # --- RIGHT: TTS Interface ---
         right_frame = ctk.CTkFrame(tab, fg_color="transparent")
@@ -3967,6 +4012,10 @@ class StudioGUI(ctk.CTk):
         else:
             self.vieneu_preset_frame.pack_forget()
             self.vieneu_custom_frame.pack(fill="x", padx=10, pady=5)
+            # Reset clone button state if voice was not encoded yet
+            if self.vieneu_ref_codes is None:
+                self.btn_vieneu_clone_now.configure(state="disabled")
+                self.vieneu_clone_instruction.pack_forget()
 
     def _vieneu_populate_voice_list(self):
         """Populate the voice list based on selected backbone"""
@@ -4109,6 +4158,11 @@ class StudioGUI(ctk.CTk):
                 backbone_repo = backbone_config.get("repo", "pnnbao-ump/VieNeu-TTS-q4-gguf")
                 codec_repo = codec_config.get("repo", "neuphonic/neucodec")
                 
+                # Get GPU optimization settings - prioritize UI slider over config
+                memory_util = self.vieneu_memory_slider.get() if hasattr(self, 'vieneu_memory_slider') else backbone_config.get("memory_util", 0.5)
+                enable_prefix_caching = backbone_config.get("enable_prefix_caching", True)
+                quant_policy = backbone_config.get("quant_policy", 0)
+                
                 self.after(0, lambda: self._vieneu_log(f"🦜 Loading backbone: {backbone_repo}"))
                 self.after(0, lambda: self._vieneu_log(f"🎵 Loading codec: {codec_repo}"))
                 self.after(0, lambda: self._vieneu_log(f"🖥️ Device: {device}"))
@@ -4158,15 +4212,17 @@ class StudioGUI(ctk.CTk):
                 
                 if use_fast:
                     self.after(0, lambda: self._vieneu_log("🚀 Sử dụng LMDeploy backend (GPU optimized)"))
+                    self.after(0, lambda: self._vieneu_log(f"   ⚡ Memory util: {memory_util}, Prefix caching: {enable_prefix_caching}"))
                     try:
                         self.vieneu_tts_instance = FastVieNeuTTS(
                             backbone_repo=backbone_repo,
                             backbone_device=backbone_device,
                             codec_repo=codec_repo,
                             codec_device=codec_device,
-                            memory_util=0.3,
+                            memory_util=memory_util,
                             tp=1,
-                            enable_prefix_caching=True,
+                            enable_prefix_caching=enable_prefix_caching,
+                            quant_policy=quant_policy,
                             enable_triton=enable_triton,
                             max_batch_size=max_batch,
                         )
@@ -4250,7 +4306,11 @@ class StudioGUI(ctk.CTk):
                 self.vieneu_custom_ref_text = ref_text
                 
                 self.after(0, lambda: self._vieneu_log("✅ Đã mã hóa giọng mẫu thành công!"))
-                self.after(0, lambda: self.vieneu_custom_status.configure(text="✅ Sẵn sàng clone giọng!", text_color="#22c55e"))
+                self.after(0, lambda: self._vieneu_log("📌 Bước tiếp: Nhập văn bản → Bấm 'TẠO AUDIO VỚI GIỌNG ĐÃ CLONE'"))
+                self.after(0, lambda: self.vieneu_custom_status.configure(text="✅ Sẵn sàng! Nhập văn bản và bấm nút bên dưới để tạo audio", text_color="#22c55e"))
+                # Enable the clone button and show instructions
+                self.after(0, lambda: self.btn_vieneu_clone_now.configure(state="normal"))
+                self.after(0, lambda: self.vieneu_clone_instruction.pack(anchor="w"))
                 
             except Exception as e:
                 self.after(0, lambda: self._vieneu_log(f"❌ Lỗi mã hóa: {str(e)}"))

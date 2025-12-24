@@ -4215,10 +4215,11 @@ class StudioGUI(ctk.CTk):
                     cuda_device_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "Unknown"
                     self.after(0, lambda name=cuda_device_name: self._vieneu_log(f"✅ Phát hiện GPU: {name}"))
                 else:
-                    self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
+                    self.after(0, lambda: self._vieneu_log("⚠️ torch.cuda.is_available() = False"))
                 
                 # Determine device based on selection and CUDA availability
                 if device == "Auto":
+                    # Auto mode: use GPU if available, fallback to CPU otherwise
                     if has_cuda:
                         if "gguf" in backbone_name.lower():
                             backbone_device = "gpu"
@@ -4226,22 +4227,23 @@ class StudioGUI(ctk.CTk):
                             backbone_device = "cuda"
                         codec_device = "cuda"
                     else:
+                        self.after(0, lambda: self._vieneu_log("📦 Auto mode: chuyển sang CPU"))
                         backbone_device = "cpu"
                         codec_device = "cpu"
                 elif device == "CPU":
                     backbone_device = "cpu"
                     codec_device = "cpu"
-                else:  # CUDA (GPU) selected
-                    if has_cuda:
-                        if "gguf" in backbone_name.lower():
-                            backbone_device = "gpu"
-                        else:
-                            backbone_device = "cuda"
-                        codec_device = "cuda"
+                else:  # CUDA (GPU) selected explicitly - NO FALLBACK to CPU
+                    # When user explicitly selects GPU, force GPU mode without fallback
+                    # This allows proper error handling if CUDA is not properly configured
+                    if "gguf" in backbone_name.lower():
+                        backbone_device = "gpu"
                     else:
-                        self.after(0, lambda: self._vieneu_log("⚠️ GPU không khả dụng, chuyển sang CPU"))
-                        backbone_device = "cpu"
-                        codec_device = "cpu"
+                        backbone_device = "cuda"
+                    codec_device = "cuda"
+                    if not has_cuda:
+                        self.after(0, lambda: self._vieneu_log("⚠️ torch.cuda.is_available()=False nhưng vẫn thử GPU..."))
+                        self.after(0, lambda: self._vieneu_log("   💡 Có thể cần: pip install torch --index-url https://download.pytorch.org/whl/cu121"))
                 
                 # ONNX codec only runs on CPU
                 if "onnx" in codec_repo.lower():
@@ -4251,8 +4253,12 @@ class StudioGUI(ctk.CTk):
                 self.after(0, lambda d=device_display: self._vieneu_log(f"🎯 Sử dụng thiết bị: {d}"))
                 
                 # Check if we should use FastVieNeuTTS (LMDeploy)
+                # Use FastVieNeuTTS when:
+                # 1. User explicitly selected CUDA (even if torch.cuda.is_available() is False)
+                # 2. OR has_cuda is True and device is Auto
+                # AND the model is not GGUF (which uses llama-cpp)
                 use_fast = (
-                    has_cuda and 
+                    (device == "CUDA" or has_cuda) and 
                     device != "CPU" and 
                     "gguf" not in backbone_name.lower()
                 )

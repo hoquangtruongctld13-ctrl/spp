@@ -46,9 +46,11 @@ def _clear_jinja2_template_cache():
     """
     try:
         import jinja2
-        # Clear all Jinja2 environments' template caches
+        # Clear Jinja2 environment's template cache
         # This is a workaround for the "duplicate template name" issue
-        jinja2.Environment().cache.clear() if hasattr(jinja2.Environment(), 'cache') else None
+        env = jinja2.Environment()
+        if hasattr(env, 'cache') and env.cache is not None:
+            env.cache.clear()
         
         # Also try to clear the global template registry if it exists
         # Different versions of jinja2 may store templates differently

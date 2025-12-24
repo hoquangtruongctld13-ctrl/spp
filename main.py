@@ -234,8 +234,8 @@ VIENEU_TTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VieNe
 VIENEU_BACKBONE_CONFIGS = {
     "VN TTS (GPU)": {
         "repo": "pnnbao-ump/VieNeu-TTS",
-        "supports_streaming": True,
-        "description": "Chất lượng cao nhất, yêu cầu GPU",
+        "supports_streaming": False,  # GPU model doesn't support streaming
+        "description": "Chất lượng cao nhất, yêu cầu GPU (không hỗ trợ streaming)",
         "requires_gpu": True,
         # GPU optimization settings
         "memory_util": 0.5,  # GPU memory utilization (0.3-0.8)
@@ -245,7 +245,7 @@ VIENEU_BACKBONE_CONFIGS = {
     "VN TTS Q8 (CPU/GPU)": {
         "repo": "pnnbao-ump/VieNeu-TTS-q8-gguf",
         "supports_streaming": True,
-        "description": "Cân bằng chất lượng/tốc độ (CPU/GPU)",
+        "description": "Cân bằng chất lượng/tốc độ (CPU/GPU, hỗ trợ streaming)",
         "requires_gpu": False,
         # GGUF settings
         "n_gpu_layers": -1,  # -1 = all layers on GPU if available
@@ -254,7 +254,7 @@ VIENEU_BACKBONE_CONFIGS = {
     "VN TTS Q4 (Nhanh)": {
         "repo": "pnnbao-ump/VieNeu-TTS-q4-gguf",
         "supports_streaming": True,
-        "description": "Nhanh nhất, nhẹ nhất (CPU tối ưu)",
+        "description": "Nhanh nhất, nhẹ nhất (CPU tối ưu, hỗ trợ streaming)",
         "requires_gpu": False,
         # GGUF settings
         "n_gpu_layers": -1,  # -1 = all layers on GPU if available
@@ -4619,13 +4619,13 @@ class StudioGUI(ctk.CTk):
                 start_time = time.time()
                 all_audio = []
                 
-                # Check if this is a GGUF model (supports streaming) or standard model
-                is_gguf_model = "gguf" in backbone_name.lower()
+                # Check if model supports streaming using the configuration
+                # Use the backbone_config's supports_streaming flag (more reliable than string matching)
+                model_supports_streaming = backbone_config.get("supports_streaming", False)
                 
-                # Use streaming if enabled and supported
-                # Streaming only works for GGUF models, not for standard PyTorch/LMDeploy models
-                if use_streaming and is_gguf_model:
-                    self.after(0, lambda: self._vieneu_log("⚡ Bắt đầu streaming (GGUF)..."))
+                # Use streaming if enabled and supported by the model
+                if use_streaming and model_supports_streaming:
+                    self.after(0, lambda: self._vieneu_log("⚡ Bắt đầu streaming..."))
                     self.after(0, lambda: self.vieneu_status_lbl.configure(text="Streaming..."))
                     
                     # For streaming, we process text as a whole or in larger chunks
@@ -4641,7 +4641,7 @@ class StudioGUI(ctk.CTk):
                         
                         chunk_audio = []
                         try:
-                            # Check if infer_stream method exists and model is quantized
+                            # Check if infer_stream method exists
                             if not hasattr(self.vieneu_tts_instance, 'infer_stream'):
                                 raise AttributeError("infer_stream method not available")
                             
@@ -4654,7 +4654,7 @@ class StudioGUI(ctk.CTk):
                                     chunk_audio.append(audio_chunk)
                         except (AttributeError, NotImplementedError) as stream_err:
                             # For non-GGUF models, streaming is not supported - use normal inference
-                            self.after(0, lambda: self._vieneu_log(f"ℹ️ Model này không hỗ trợ streaming, dùng chế độ thường"))
+                            self.after(0, lambda: self._vieneu_log(f"ℹ️ Streaming không khả dụng, dùng chế độ thường"))
                             wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
                             if wav is not None and len(wav) > 0:
                                 chunk_audio = [wav]
@@ -4672,10 +4672,10 @@ class StudioGUI(ctk.CTk):
                             all_audio.append(combined)
                             if chunk_idx < total_chunks - 1:
                                 all_audio.append(silence_pad)
-                elif use_streaming and not is_gguf_model:
+                elif use_streaming and not model_supports_streaming:
                     # User enabled streaming but model doesn't support it - inform and use normal mode
-                    self.after(0, lambda: self._vieneu_log("ℹ️ Model GPU không hỗ trợ streaming, dùng chế độ thường"))
-                    self.after(0, lambda: self._vieneu_log("💡 Đề xuất: Dùng model GGUF (Q4/Q8) để có streaming"))
+                    self.after(0, lambda: self._vieneu_log("ℹ️ Model này không hỗ trợ streaming"))
+                    self.after(0, lambda: self._vieneu_log("💡 Đề xuất: Dùng model Q4 hoặc Q8 để có streaming"))
                     use_streaming = False  # Fall through to non-streaming code below
                 
                 if not use_streaming:

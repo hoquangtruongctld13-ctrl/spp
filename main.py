@@ -4561,19 +4561,19 @@ class StudioGUI(ctk.CTk):
                             for audio_chunk in self.vieneu_tts_instance.infer_stream(chunk_text, ref_codes, ref_text):
                                 if audio_chunk is not None and len(audio_chunk) > 0:
                                     chunk_audio.append(audio_chunk)
-                        except (AttributeError, NotImplementedError) as stream_err:
-                            self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming không khả dụng, dùng chế độ thường: {err}"))
+                        except (AttributeError, NotImplementedError, Exception) as stream_err:
+                            # Log appropriate message based on error type
+                            if isinstance(stream_err, (AttributeError, NotImplementedError)):
+                                self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming không khả dụng, dùng chế độ thường"))
+                            else:
+                                self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming lỗi, thử non-streaming: {err}"))
                             # Fallback to non-streaming
                             wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
-                            if wav is not None:
-                                chunk_audio = [wav]
-                        except Exception as stream_err:
-                            self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming lỗi, thử non-streaming: {err}"))
-                            # Fallback to non-streaming
-                            wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
-                            if wav is not None:
+                            if wav is not None and len(wav) > 0:
                                 chunk_audio = [wav]
                         
+                        # Filter out empty arrays and concatenate
+                        chunk_audio = [arr for arr in chunk_audio if arr is not None and len(arr) > 0]
                         if chunk_audio:
                             combined = np.concatenate(chunk_audio)
                             all_audio.append(combined)

@@ -4021,7 +4021,8 @@ class StudioGUI(ctk.CTk):
             
             if not os.path.exists(audio_path):
                 self._vieneu_log(f"❌ Không tìm thấy: {audio_path}")
-                error_msg = f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục VieNeu-TTS/sample/ có tồn tại không\n2. File audio mẫu có đúng tên không"
+                sample_dir = os.path.join(VIENEU_TTS_DIR, "sample")
+                error_msg = f"Không tìm thấy file audio mẫu cho giọng '{voice_name}'.\n\nĐường dẫn: {audio_path}\n\n💡 Hãy kiểm tra:\n1. Thư mục {sample_dir} có tồn tại không\n2. File audio mẫu có đúng tên không"
                 return (False, voice_mode, voice_name, error_msg)
             
             return (True, voice_mode, voice_name, None)
@@ -4029,7 +4030,7 @@ class StudioGUI(ctk.CTk):
             # Custom voice - validate ref_codes
             if self.vieneu_ref_codes is None or (hasattr(self.vieneu_ref_codes, '__len__') and len(self.vieneu_ref_codes) == 0):
                 self._vieneu_log("❌ Chế độ Clone giọng mới được chọn nhưng chưa mã hóa giọng mẫu")
-                error_msg = "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút '🔧 Mã hóa giọng mẫu'\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset."
+                error_msg = "Bạn đang ở chế độ 'Clone giọng mới'.\n\nVui lòng:\n1. Chọn file audio mẫu (.wav)\n2. Nhập nội dung lời thoại mẫu\n3. Bấm nút Mã hóa giọng mẫu\n\nHoặc chuyển sang chế độ 'Giọng mẫu có sẵn' nếu muốn dùng giọng preset."
                 return (False, voice_mode, "Custom", error_msg)
             
             return (True, voice_mode, "Custom", None)
@@ -4448,7 +4449,7 @@ class StudioGUI(ctk.CTk):
             import numpy as np
             import soundfile as sf
             
-            # Get reference voice (validation already done in _vieneu_process_file)
+            # Get reference voice (validation done via _vieneu_validate_voice_settings in _vieneu_process_file)
             if voice_mode == "preset":
                 voice_name = self.vieneu_selected_voice.get()
                 voice_info = VIENEU_VOICE_SAMPLES.get(voice_name, {})

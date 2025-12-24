@@ -4232,7 +4232,7 @@ class StudioGUI(ctk.CTk):
                     if cuda_visible_stripped == '' or cuda_visible_stripped == '-1':
                         self.after(0, lambda val=cuda_visible: self._vieneu_log(f"⚠️ CUDA_VISIBLE_DEVICES='{val}' - CUDA bị vô hiệu hóa"))
                 
-                # Check if PyTorch was built with CUDA support
+                # Determine if PyTorch was built with CUDA support and check GPU availability
                 if not torch_cuda_built:
                     self.after(0, lambda: self._vieneu_log("❌ PyTorch không có CUDA! Cài lại PyTorch phiên bản GPU."))
                     has_cuda = False

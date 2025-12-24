@@ -4308,10 +4308,12 @@ class StudioGUI(ctk.CTk):
                 self.after(0, lambda: self.btn_vieneu_generate.configure(state="normal"))
                 self.after(0, lambda: self.btn_vieneu_process.configure(state="normal"))
                 
-                # Enable streaming checkbox if GPU mode (FastVieNeuTTS) is active
-                if self.vieneu_using_fast:
+                # Enable streaming checkbox if streaming is supported
+                # Streaming is supported by: FastVieNeuTTS (GPU+LMDeploy) and GGUF models
+                supports_streaming = backbone_config.get("supports_streaming", False)
+                if self.vieneu_using_fast or supports_streaming:
                     self.after(0, lambda: self.vieneu_streaming_cb.configure(state="normal"))
-                    self.after(0, lambda: self._vieneu_log("⚡ Streaming khả dụng với GPU"))
+                    self.after(0, lambda: self._vieneu_log("⚡ Streaming khả dụng"))
                 else:
                     self.after(0, lambda: self.vieneu_streaming_cb.configure(state="disabled"))
                     self.after(0, lambda: self.vieneu_streaming_var.set(False))
@@ -4478,10 +4480,14 @@ class StudioGUI(ctk.CTk):
         self._vieneu_log(f"🎙️ Đang tạo audio với giọng: {voice_name}")
         self._vieneu_log(f"📝 Text length: {len(text)} chars")
         
-        # Check if streaming is enabled
-        use_streaming = self.vieneu_streaming_var.get() and self.vieneu_using_fast
+        # Check if streaming is enabled and supported
+        # Streaming is supported by: FastVieNeuTTS (GPU+LMDeploy) and VieNeuTTS with GGUF models
+        backbone_name = self.vieneu_backbone_var.get()
+        is_gguf = "q4" in backbone_name.lower() or "q8" in backbone_name.lower()
+        streaming_supported = self.vieneu_using_fast or is_gguf
+        use_streaming = self.vieneu_streaming_var.get() and streaming_supported
         if use_streaming:
-            self._vieneu_log("⚡ Streaming mode enabled (GPU)")
+            self._vieneu_log("⚡ Streaming mode enabled")
         
         self.btn_vieneu_generate.configure(state="disabled")
         self.vieneu_status_lbl.configure(text="Đang xử lý...")

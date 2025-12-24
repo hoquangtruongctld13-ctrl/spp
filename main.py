@@ -224,25 +224,25 @@ EDGE_TTS_LANGUAGES = list(EDGE_TTS_LANGUAGE_MAP.keys())
 EDGE_TTS_GENDERS = ["Tất cả", "Male", "Female"]
 
 # =============================================================================
-# VIENEU-TTS CONFIGURATION
+# VN TTS CONFIGURATION (Vietnamese Text-to-Speech)
 # =============================================================================
 
-# VieNeu-TTS directory path (relative to main.py)
+# VN TTS directory path (relative to main.py)
 VIENEU_TTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VieNeu-TTS")
 
 # Model backbone configurations
 VIENEU_BACKBONE_CONFIGS = {
-    "VieNeu-TTS (GPU)": {
+    "VN TTS (GPU)": {
         "repo": "pnnbao-ump/VieNeu-TTS",
-        "supports_streaming": False,
-        "description": "Chất lượng cao nhất, yêu cầu GPU (LMDeploy)",
+        "supports_streaming": True,
+        "description": "Chất lượng cao nhất, yêu cầu GPU",
         "requires_gpu": True,
         # GPU optimization settings
         "memory_util": 0.5,  # GPU memory utilization (0.3-0.8)
         "enable_prefix_caching": True,  # Speed up repeated generation
         "quant_policy": 0,  # KV cache quantization: 0=off, 4=int4, 8=int8
     },
-    "VieNeu-TTS-q8-gguf": {
+    "VN TTS Q8 (CPU/GPU)": {
         "repo": "pnnbao-ump/VieNeu-TTS-q8-gguf",
         "supports_streaming": True,
         "description": "Cân bằng chất lượng/tốc độ (CPU/GPU)",
@@ -251,7 +251,7 @@ VIENEU_BACKBONE_CONFIGS = {
         "n_gpu_layers": -1,  # -1 = all layers on GPU if available
         "flash_attn": True,  # Enable flash attention on GPU
     },
-    "VieNeu-TTS-q4-gguf": {
+    "VN TTS Q4 (Nhanh)": {
         "repo": "pnnbao-ump/VieNeu-TTS-q4-gguf",
         "supports_streaming": True,
         "description": "Nhanh nhất, nhẹ nhất (CPU tối ưu)",
@@ -351,7 +351,7 @@ VIENEU_GGUF_ALLOWED_VOICES = [
     "Dung (nữ miền Nam)",
 ]
 
-# VieNeu-TTS default settings
+# VN TTS default settings
 VIENEU_MAX_CHARS_PER_CHUNK = 256
 VIENEU_DEFAULT_DEVICE = "Auto"  # Auto, CPU, CUDA
 VIENEU_SAMPLE_RATE = 24000
@@ -2553,8 +2553,8 @@ class StudioGUI(ctk.CTk):
         self.lt_chunk_v2_enabled = False  # Enable punctuation-based chunking for Long Text
         # Gemini TTS file chunking settings
         self.gemini_chunk_size = GEMINI_DEFAULT_CHUNK_SIZE  # Default 300 chars
-        # VieNeu-TTS settings
-        self.vieneu_backbone = "VieNeu-TTS-q4-gguf"
+        # VN TTS settings
+        self.vieneu_backbone = "VN TTS Q4 (Nhanh)"
         self.vieneu_codec = "NeuCodec (Standard)"
         self.vieneu_device = "Auto"
 
@@ -2569,7 +2569,7 @@ class StudioGUI(ctk.CTk):
         self.tab_multivoice = self.tabview.add("Multi Voice (Đa giọng)")
         self.tab_capcut = self.tabview.add("Capcut Voice")
         self.tab_edge = self.tabview.add("Edge TTS")
-        self.tab_vieneu = self.tabview.add("🦜 VieNeu-TTS")
+        self.tab_vieneu = self.tabview.add("🇻🇳 VN TTS")
         self.tab_script = self.tabview.add("Đọc Kịch Bản")
         self.tab_settings = self.tabview.add("⚙Configuration")
 
@@ -2607,7 +2607,7 @@ class StudioGUI(ctk.CTk):
         if hasattr(self, 'script_text_input'):
             textboxes_to_optimize.append(self.script_text_input)
         
-        # VieNeu-TTS text input
+        # VN TTS text input
         if hasattr(self, 'vieneu_text_input'):
             textboxes_to_optimize.append(self.vieneu_text_input)
         
@@ -3618,13 +3618,13 @@ class StudioGUI(ctk.CTk):
     # TAB: VIENEU-TTS (Vietnamese Neural TTS with Voice Cloning)
     # ==========================================================================
     def _setup_vieneu_tab(self):
-        """Setup the VieNeu-TTS tab - Vietnamese TTS with voice cloning"""
+        """Setup the VN TTS tab - Vietnamese TTS with voice cloning"""
         tab = self.tab_vieneu
         tab.grid_columnconfigure(0, weight=3)
         tab.grid_columnconfigure(1, weight=7)
         tab.grid_rowconfigure(0, weight=1)
         
-        # Initialize VieNeu-TTS state variables
+        # Initialize VN TTS state variables
         self.vieneu_tts_instance = None
         self.vieneu_model_loaded = False
         self.vieneu_using_fast = False
@@ -3642,7 +3642,7 @@ class StudioGUI(ctk.CTk):
         # Header
         header = ctk.CTkFrame(left_frame, fg_color="#6366f1", height=45)
         header.pack(fill="x")
-        ctk.CTkLabel(header, text="🦜 VIENEU-TTS", font=("Roboto", 14, "bold"), text_color="white").pack(pady=10)
+        ctk.CTkLabel(header, text="🇻🇳 VN TTS", font=("Roboto", 14, "bold"), text_color="white").pack(pady=10)
         
         # Scrollable content
         content_scroll = ctk.CTkScrollableFrame(left_frame, fg_color="transparent")
@@ -3656,7 +3656,7 @@ class StudioGUI(ctk.CTk):
         
         # Backbone selection
         ctk.CTkLabel(model_frame, text="Backbone Model:", font=("Roboto", 10)).pack(anchor="w", padx=10, pady=(10, 2))
-        self.vieneu_backbone_var = ctk.StringVar(value="VieNeu-TTS-q4-gguf")
+        self.vieneu_backbone_var = ctk.StringVar(value="VN TTS Q4 (Nhanh)")
         self.vieneu_backbone_combo = ctk.CTkComboBox(
             model_frame, 
             values=list(VIENEU_BACKBONE_CONFIGS.keys()),
@@ -3668,7 +3668,7 @@ class StudioGUI(ctk.CTk):
         # Backbone description
         self.vieneu_backbone_desc = ctk.CTkLabel(
             model_frame, 
-            text=VIENEU_BACKBONE_CONFIGS["VieNeu-TTS-q4-gguf"]["description"],
+            text=VIENEU_BACKBONE_CONFIGS["VN TTS Q4 (Nhanh)"]["description"],
             font=("Roboto", 9), text_color="gray"
         )
         self.vieneu_backbone_desc.pack(anchor="w", padx=10, pady=2)
@@ -3807,6 +3807,24 @@ class StudioGUI(ctk.CTk):
         )
         self.btn_vieneu_encode_custom.pack(fill="x", pady=10)
         
+        # Voice name entry for saving
+        save_voice_frame = ctk.CTkFrame(self.vieneu_custom_frame, fg_color="transparent")
+        save_voice_frame.pack(fill="x", pady=(5, 2))
+        
+        ctk.CTkLabel(save_voice_frame, text="💾 Lưu giọng với tên:", font=("Roboto", 10)).pack(side="left", padx=(0, 5))
+        self.vieneu_save_voice_name = ctk.CTkEntry(save_voice_frame, placeholder_text="Tên giọng (VD: Hùng nam miền Bắc)", width=180)
+        self.vieneu_save_voice_name.pack(side="left", fill="x", expand=True)
+        
+        self.btn_vieneu_save_voice = ctk.CTkButton(
+            self.vieneu_custom_frame,
+            text="💾 LƯU GIỌNG VÀO DANH SÁCH",
+            fg_color="#f59e0b",
+            hover_color="#d97706",
+            state="disabled",
+            command=self._vieneu_save_cloned_voice
+        )
+        self.btn_vieneu_save_voice.pack(fill="x", pady=5)
+        
         self.vieneu_custom_status = ctk.CTkLabel(
             self.vieneu_custom_frame,
             text="",
@@ -3902,6 +3920,16 @@ class StudioGUI(ctk.CTk):
         )
         self.btn_vieneu_save.pack(side="left", padx=5)
 
+        # Streaming option (GPU only)
+        self.vieneu_streaming_var = ctk.BooleanVar(value=False)
+        self.vieneu_streaming_cb = ctk.CTkCheckBox(
+            btn_frame, 
+            text="⚡ Streaming (GPU)", 
+            variable=self.vieneu_streaming_var,
+            font=("Roboto", 10)
+        )
+        self.vieneu_streaming_cb.pack(side="left", padx=10)
+
         self.vieneu_status_lbl = ctk.CTkLabel(btn_frame, text="Sẵn sàng", text_color="gray")
         self.vieneu_status_lbl.pack(side="right", padx=10)
 
@@ -3989,7 +4017,7 @@ class StudioGUI(ctk.CTk):
     # VIENEU-TTS HELPER METHODS
     # ==========================================================================
     def _vieneu_log(self, msg):
-        """Add message to VieNeu-TTS log"""
+        """Add message to VN TTS log"""
         self.vieneu_log.configure(state="normal")
         self.vieneu_log.insert("end", f"[{time.strftime('%H:%M:%S')}] {msg}\n")
         self.vieneu_log.see("end")
@@ -4051,7 +4079,7 @@ class StudioGUI(ctk.CTk):
             rb.pack(anchor="w", pady=2, padx=5)
 
     def _vieneu_update_char_count(self, event=None):
-        """Update character count for VieNeu-TTS text input"""
+        """Update character count for VN TTS text input"""
         text = self.vieneu_text_input.get("1.0", "end").strip()
         count = len(text)
         self.vieneu_char_count.configure(text=f"Ký tự: {count}")
@@ -4140,7 +4168,7 @@ class StudioGUI(ctk.CTk):
             messagebox.showwarning("Cảnh báo", f"Không tìm thấy file audio mẫu.\nĐường dẫn: {audio_path}")
 
     def _vieneu_load_model(self):
-        """Load VieNeu-TTS model"""
+        """Load VN TTS model"""
         self._vieneu_log("⏳ Đang tải model... Vui lòng chờ...")
         self.btn_vieneu_load.configure(state="disabled")
         self.vieneu_model_status.configure(text="⏳ Đang tải model...", text_color="#fbbf24")
@@ -4167,42 +4195,59 @@ class StudioGUI(ctk.CTk):
                 enable_prefix_caching = backbone_config.get("enable_prefix_caching", True)
                 quant_policy = backbone_config.get("quant_policy", 0)
                 
-                self.after(0, lambda: self._vieneu_log(f"🦜 Loading backbone: {backbone_repo}"))
-                self.after(0, lambda: self._vieneu_log(f"🎵 Loading codec: {codec_repo}"))
-                self.after(0, lambda: self._vieneu_log(f"🖥️ Device: {device}"))
+                # User-friendly log messages
+                self.after(0, lambda: self._vieneu_log(f"🔧 Đang tải model TTS tiếng Việt..."))
+                self.after(0, lambda: self._vieneu_log(f"📦 Phiên bản: {backbone_name}"))
+                self.after(0, lambda: self._vieneu_log(f"🖥️ Thiết bị: {device}"))
                 
-                # Add VieNeu-TTS to path
+                # Add VN TTS to path
                 vieneu_path = VIENEU_TTS_DIR
                 if vieneu_path not in sys.path:
                     sys.path.insert(0, vieneu_path)
                 
-                # Determine actual device
+                # Determine actual device - Fix GPU detection
                 import torch
                 has_cuda = torch.cuda.is_available()
                 
+                # Log CUDA status for debugging
+                if has_cuda:
+                    cuda_device_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "Unknown"
+                    self.after(0, lambda name=cuda_device_name: self._vieneu_log(f"✅ Phát hiện GPU: {name}"))
+                else:
+                    self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
+                
+                # Determine device based on selection and CUDA availability
                 if device == "Auto":
-                    if "gguf" in backbone_name.lower():
-                        backbone_device = "gpu" if has_cuda else "cpu"
+                    if has_cuda:
+                        if "gguf" in backbone_name.lower():
+                            backbone_device = "gpu"
+                        else:
+                            backbone_device = "cuda"
+                        codec_device = "cuda"
                     else:
-                        backbone_device = "cuda" if has_cuda else "cpu"
-                    codec_device = "cuda" if has_cuda else "cpu"
+                        backbone_device = "cpu"
+                        codec_device = "cpu"
                 elif device == "CPU":
                     backbone_device = "cpu"
                     codec_device = "cpu"
-                else:  # CUDA
-                    backbone_device = "cuda" if has_cuda else "cpu"
-                    codec_device = "cuda" if has_cuda else "cpu"
+                else:  # CUDA (GPU) selected
+                    if has_cuda:
+                        if "gguf" in backbone_name.lower():
+                            backbone_device = "gpu"
+                        else:
+                            backbone_device = "cuda"
+                        codec_device = "cuda"
+                    else:
+                        self.after(0, lambda: self._vieneu_log("⚠️ GPU không khả dụng, chuyển sang CPU"))
+                        backbone_device = "cpu"
+                        codec_device = "cpu"
                 
                 # ONNX codec only runs on CPU
                 if "onnx" in codec_repo.lower():
                     codec_device = "cpu"
                 
-                # GGUF uses "gpu" instead of "cuda"
-                if "gguf" in backbone_name.lower() and backbone_device == "cuda":
-                    backbone_device = "gpu"
-                
-                self.after(0, lambda: self._vieneu_log(f"   Backbone device: {backbone_device}"))
-                self.after(0, lambda: self._vieneu_log(f"   Codec device: {codec_device}"))
+                device_display = backbone_device.upper()
+                self.after(0, lambda d=device_display: self._vieneu_log(f"🎯 Sử dụng thiết bị: {d}"))
                 
                 # Check if we should use FastVieNeuTTS (LMDeploy)
                 use_fast = (
@@ -4215,8 +4260,8 @@ class StudioGUI(ctk.CTk):
                 from vieneu_tts import VieNeuTTS, FastVieNeuTTS
                 
                 if use_fast:
-                    self.after(0, lambda: self._vieneu_log("🚀 Sử dụng LMDeploy backend (GPU optimized)"))
-                    self.after(0, lambda: self._vieneu_log(f"   ⚡ Memory util: {memory_util}, Prefix caching: {enable_prefix_caching}"))
+                    self.after(0, lambda: self._vieneu_log("🚀 Đang tải GPU tối ưu hóa..."))
+                    self.after(0, lambda m=memory_util: self._vieneu_log(f"   ⚡ GPU Memory: {int(m*100)}%"))
                     try:
                         self.vieneu_tts_instance = FastVieNeuTTS(
                             backbone_repo=backbone_repo,
@@ -4311,9 +4356,11 @@ class StudioGUI(ctk.CTk):
                 
                 self.after(0, lambda: self._vieneu_log("✅ Đã mã hóa giọng mẫu thành công!"))
                 self.after(0, lambda: self._vieneu_log("📌 Bước tiếp: Nhập văn bản → Bấm 'TẠO AUDIO VỚI GIỌNG ĐÃ CLONE'"))
+                self.after(0, lambda: self._vieneu_log("💾 Hoặc bấm 'LƯU GIỌNG' để sử dụng lại lần sau"))
                 self.after(0, lambda: self.vieneu_custom_status.configure(text="✅ Sẵn sàng! Nhập văn bản và bấm nút bên dưới để tạo audio", text_color="#22c55e"))
-                # Enable the clone button and show instructions
+                # Enable the clone button, save button and show instructions
                 self.after(0, lambda: self.btn_vieneu_clone_now.configure(state="normal"))
+                self.after(0, lambda: self.btn_vieneu_save_voice.configure(state="normal"))
                 self.after(0, lambda: self.vieneu_clone_instruction.pack(anchor="w"))
                 
             except Exception as e:
@@ -4322,8 +4369,88 @@ class StudioGUI(ctk.CTk):
         
         threading.Thread(target=encode_thread, daemon=True).start()
 
+    def _vieneu_save_cloned_voice(self):
+        """Save cloned voice to sample directory for reuse"""
+        # Validate voice has been encoded
+        if self.vieneu_ref_codes is None:
+            messagebox.showerror("Lỗi", "Vui lòng mã hóa giọng mẫu trước!")
+            return
+        
+        if self.vieneu_custom_ref_audio is None or not os.path.exists(self.vieneu_custom_ref_audio):
+            messagebox.showerror("Lỗi", "Không tìm thấy file audio mẫu!")
+            return
+        
+        # Get voice name from entry
+        voice_name = self.vieneu_save_voice_name.get().strip()
+        if not voice_name:
+            messagebox.showerror("Lỗi", "Vui lòng nhập tên cho giọng nói!")
+            return
+        
+        # Check if voice name already exists
+        if voice_name in VIENEU_VOICE_SAMPLES:
+            result = messagebox.askyesno("Xác nhận", f"Giọng '{voice_name}' đã tồn tại. Ghi đè?")
+            if not result:
+                return
+        
+        self._vieneu_log(f"💾 Đang lưu giọng: {voice_name}")
+        self.btn_vieneu_save_voice.configure(state="disabled")
+        
+        def save_thread():
+            try:
+                import torch
+                import numpy as np
+                
+                # Create sample directory if not exists
+                sample_dir = os.path.join(VIENEU_TTS_DIR, "sample")
+                os.makedirs(sample_dir, exist_ok=True)
+                
+                # Copy audio file
+                audio_dest = os.path.join(sample_dir, f"{voice_name}.wav")
+                shutil.copy(self.vieneu_custom_ref_audio, audio_dest)
+                
+                # Save text file
+                text_dest = os.path.join(sample_dir, f"{voice_name}.txt")
+                with open(text_dest, "w", encoding="utf-8") as f:
+                    f.write(self.vieneu_custom_ref_text)
+                
+                # Save codes file
+                codes_dest = os.path.join(sample_dir, f"{voice_name}.pt")
+                ref_codes = self.vieneu_ref_codes
+                if isinstance(ref_codes, np.ndarray):
+                    ref_codes = torch.from_numpy(ref_codes)
+                torch.save(ref_codes, codes_dest)
+                
+                # Add to VIENEU_VOICE_SAMPLES dictionary (runtime)
+                VIENEU_VOICE_SAMPLES[voice_name] = {
+                    "audio": audio_dest,
+                    "text": text_dest,
+                    "codes": codes_dest,
+                    "gender": "Custom",
+                    "accent": "Custom"
+                }
+                
+                self.after(0, lambda: self._vieneu_log(f"✅ Đã lưu giọng '{voice_name}' thành công!"))
+                self.after(0, lambda: self._vieneu_log(f"📁 Vị trí: {sample_dir}"))
+                
+                # Refresh voice list
+                self.after(0, self._vieneu_populate_voice_list)
+                
+                # Clear save name entry
+                self.after(0, lambda: self.vieneu_save_voice_name.delete(0, "end"))
+                
+                # Show success message
+                self.after(0, lambda: messagebox.showinfo("Thành công", f"Đã lưu giọng '{voice_name}'!\n\nGiọng sẽ xuất hiện trong danh sách 'Giọng mẫu có sẵn'."))
+                
+            except Exception as e:
+                self.after(0, lambda err=str(e): self._vieneu_log(f"❌ Lỗi lưu giọng: {err}"))
+                self.after(0, lambda: messagebox.showerror("Lỗi", f"Không thể lưu giọng: {str(e)}"))
+            finally:
+                self.after(0, lambda: self.btn_vieneu_save_voice.configure(state="normal"))
+        
+        threading.Thread(target=save_thread, daemon=True).start()
+
     def _vieneu_generate(self):
-        """Generate audio using VieNeu-TTS"""
+        """Generate audio using VN TTS"""
         if not self.vieneu_model_loaded or self.vieneu_tts_instance is None:
             messagebox.showerror("Lỗi", "Vui lòng tải model trước!")
             return
@@ -4341,6 +4468,11 @@ class StudioGUI(ctk.CTk):
         
         self._vieneu_log(f"🎙️ Đang tạo audio với giọng: {voice_name}")
         self._vieneu_log(f"📝 Text length: {len(text)} chars")
+        
+        # Check if streaming is enabled
+        use_streaming = self.vieneu_streaming_var.get() and self.vieneu_using_fast
+        if use_streaming:
+            self._vieneu_log("⚡ Streaming mode enabled (GPU)")
         
         self.btn_vieneu_generate.configure(state="disabled")
         self.vieneu_status_lbl.configure(text="Đang xử lý...")
@@ -4369,14 +4501,14 @@ class StudioGUI(ctk.CTk):
                     # Load or encode reference codes
                     codec_name = self.vieneu_codec_var.get()
                     if "ONNX" in codec_name and os.path.exists(codes_path):
-                        self.after(0, lambda: self._vieneu_log("📦 Loading pre-encoded codes..."))
+                        self.after(0, lambda: self._vieneu_log("📦 Đang tải mã giọng..."))
                         try:
                             ref_codes = torch.load(codes_path, map_location="cpu", weights_only=True)
                         except (RuntimeError, EOFError, FileNotFoundError) as e:
                             self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ Không thể load codes file, encoding thay thế: {err}"))
                             ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
                     else:
-                        self.after(0, lambda: self._vieneu_log("🔧 Encoding reference audio..."))
+                        self.after(0, lambda: self._vieneu_log("🔧 Đang mã hóa giọng tham chiếu..."))
                         ref_codes = self.vieneu_tts_instance.encode_reference(audio_path)
                 else:
                     ref_codes = self.vieneu_ref_codes
@@ -4385,31 +4517,65 @@ class StudioGUI(ctk.CTk):
                 if isinstance(ref_codes, torch.Tensor):
                     ref_codes = ref_codes.cpu().numpy()
                 
-                # Split long text into chunks using local function
-                chunks = split_text_into_chunks(text, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
-                total_chunks = len(chunks)
-                
-                self.after(0, lambda: self._vieneu_log(f"📝 Chia thành {total_chunks} đoạn"))
-                
-                all_audio = []
                 sr = VIENEU_SAMPLE_RATE
-                silence_pad = np.zeros(int(sr * 0.15), dtype=np.float32)
-                
                 start_time = time.time()
+                all_audio = []
                 
-                # Process chunks - chunks are TextChunk objects with .text attribute
-                for i, chunk in enumerate(chunks):
-                    self.after(0, lambda idx=i+1, total=total_chunks: self._vieneu_log(f"⏳ Đang xử lý đoạn {idx}/{total}..."))
-                    self.after(0, lambda idx=i+1, total=total_chunks: self.vieneu_status_lbl.configure(text=f"Đoạn {idx}/{total}"))
+                # Use streaming if enabled and available
+                if use_streaming:
+                    self.after(0, lambda: self._vieneu_log("⚡ Bắt đầu streaming..."))
+                    self.after(0, lambda: self.vieneu_status_lbl.configure(text="Streaming..."))
                     
-                    # TextChunk has .text attribute
-                    chunk_text = chunk.text if hasattr(chunk, 'text') else str(chunk)
-                    wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                    # For streaming, we process text as a whole or in larger chunks
+                    # Split into chunks if text is very long
+                    chunks = split_text_into_chunks(text, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
+                    total_chunks = len(chunks)
                     
-                    if wav is not None and len(wav) > 0:
-                        all_audio.append(wav)
-                        if i < total_chunks - 1:
-                            all_audio.append(silence_pad)
+                    silence_pad = np.zeros(int(sr * 0.15), dtype=np.float32)
+                    
+                    for chunk_idx, chunk in enumerate(chunks):
+                        chunk_text = chunk.text if hasattr(chunk, 'text') else str(chunk)
+                        self.after(0, lambda idx=chunk_idx+1, total=total_chunks: self._vieneu_log(f"⚡ Streaming đoạn {idx}/{total}..."))
+                        
+                        chunk_audio = []
+                        try:
+                            for audio_chunk in self.vieneu_tts_instance.infer_stream(chunk_text, ref_codes, ref_text):
+                                if audio_chunk is not None and len(audio_chunk) > 0:
+                                    chunk_audio.append(audio_chunk)
+                        except Exception as stream_err:
+                            self.after(0, lambda err=str(stream_err): self._vieneu_log(f"⚠️ Streaming lỗi, thử non-streaming: {err}"))
+                            # Fallback to non-streaming
+                            wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                            if wav is not None:
+                                chunk_audio = [wav]
+                        
+                        if chunk_audio:
+                            combined = np.concatenate(chunk_audio)
+                            all_audio.append(combined)
+                            if chunk_idx < total_chunks - 1:
+                                all_audio.append(silence_pad)
+                else:
+                    # Split long text into chunks using local function
+                    chunks = split_text_into_chunks(text, chunk_size=VIENEU_MAX_CHARS_PER_CHUNK)
+                    total_chunks = len(chunks)
+                    
+                    self.after(0, lambda: self._vieneu_log(f"📝 Chia thành {total_chunks} đoạn"))
+                    
+                    silence_pad = np.zeros(int(sr * 0.15), dtype=np.float32)
+                    
+                    # Process chunks - chunks are TextChunk objects with .text attribute
+                    for i, chunk in enumerate(chunks):
+                        self.after(0, lambda idx=i+1, total=total_chunks: self._vieneu_log(f"⏳ Đang xử lý đoạn {idx}/{total}..."))
+                        self.after(0, lambda idx=i+1, total=total_chunks: self.vieneu_status_lbl.configure(text=f"Đoạn {idx}/{total}"))
+                        
+                        # TextChunk has .text attribute
+                        chunk_text = chunk.text if hasattr(chunk, 'text') else str(chunk)
+                        wav = self.vieneu_tts_instance.infer(chunk_text, ref_codes, ref_text)
+                        
+                        if wav is not None and len(wav) > 0:
+                            all_audio.append(wav)
+                            if i < total_chunks - 1:
+                                all_audio.append(silence_pad)
                 
                 if not all_audio:
                     self.after(0, lambda: self._vieneu_log("❌ Không tạo được audio!"))
@@ -4444,7 +4610,7 @@ class StudioGUI(ctk.CTk):
         threading.Thread(target=generate_thread, daemon=True).start()
 
     def _vieneu_play(self):
-        """Play the generated VieNeu-TTS audio"""
+        """Play the generated VN TTS audio"""
         if self.vieneu_temp_audio and os.path.exists(self.vieneu_temp_audio):
             self.player.play(self.vieneu_temp_audio)
             self._vieneu_log("▶ Đang phát audio...")
@@ -4468,7 +4634,7 @@ class StudioGUI(ctk.CTk):
             self._vieneu_log(f"💾 Đã lưu: {file_path}")
 
     def _vieneu_process_file(self):
-        """Process file/folder with VieNeu-TTS"""
+        """Process file/folder with VN TTS"""
         if not self.vieneu_model_loaded or self.vieneu_tts_instance is None:
             messagebox.showerror("Lỗi", "Vui lòng tải model trước!")
             return

@@ -3709,12 +3709,13 @@ class StudioGUI(ctk.CTk):
         gpu_opt_frame.pack(fill="x", padx=10, pady=5)
         
         ctk.CTkLabel(gpu_opt_frame, text="GPU Memory:", font=("Roboto", 10)).pack(side="left", padx=5)
+        # Slider from 30% to 80% GPU memory, steps of 10% (30, 40, 50, 60, 70, 80)
         self.vieneu_memory_slider = ctk.CTkSlider(gpu_opt_frame, from_=0.3, to=0.8, number_of_steps=5, width=100)
-        self.vieneu_memory_slider.set(0.5)
+        self.vieneu_memory_slider.set(0.5)  # Default to 50%
         self.vieneu_memory_slider.pack(side="left", padx=5)
         self.vieneu_memory_lbl = ctk.CTkLabel(gpu_opt_frame, text="50%", font=("Roboto", 9), width=35)
         self.vieneu_memory_lbl.pack(side="left")
-        self.vieneu_memory_slider.configure(command=lambda v: self.vieneu_memory_lbl.configure(text=f"{int(v*100)}%"))
+        self.vieneu_memory_slider.configure(command=lambda v: self.vieneu_memory_lbl.configure(text=f"{int(round(v*100))}%"))
         
         # Load model button
         self.btn_vieneu_load = ctk.CTkButton(
@@ -3826,7 +3827,7 @@ class StudioGUI(ctk.CTk):
         )
         self.btn_vieneu_clone_now.pack(fill="x", pady=(10, 5))
         
-        # Instruction label
+        # Instruction label - initially hidden, shown after encoding
         self.vieneu_clone_instruction = ctk.CTkLabel(
             self.vieneu_custom_frame,
             text="📌 Bước tiếp theo: Nhập văn bản ở bên phải → Bấm nút trên để tạo audio",
@@ -3834,8 +3835,7 @@ class StudioGUI(ctk.CTk):
             text_color="#94a3b8",
             wraplength=280
         )
-        self.vieneu_clone_instruction.pack(anchor="w")
-        self.vieneu_clone_instruction.pack_forget()  # Hide initially
+        # Don't pack yet - will be shown after encoding completes
 
         # --- RIGHT: TTS Interface ---
         right_frame = ctk.CTkFrame(tab, fg_color="transparent")
@@ -4015,7 +4015,11 @@ class StudioGUI(ctk.CTk):
             # Reset clone button state if voice was not encoded yet
             if self.vieneu_ref_codes is None:
                 self.btn_vieneu_clone_now.configure(state="disabled")
-                self.vieneu_clone_instruction.pack_forget()
+                # Hide instruction if visible
+                try:
+                    self.vieneu_clone_instruction.pack_forget()
+                except Exception:
+                    pass  # Ignore if not packed
 
     def _vieneu_populate_voice_list(self):
         """Populate the voice list based on selected backbone"""
@@ -4158,8 +4162,8 @@ class StudioGUI(ctk.CTk):
                 backbone_repo = backbone_config.get("repo", "pnnbao-ump/VieNeu-TTS-q4-gguf")
                 codec_repo = codec_config.get("repo", "neuphonic/neucodec")
                 
-                # Get GPU optimization settings - prioritize UI slider over config
-                memory_util = self.vieneu_memory_slider.get() if hasattr(self, 'vieneu_memory_slider') else backbone_config.get("memory_util", 0.5)
+                # Get GPU optimization settings from UI slider (initialized in _setup_vieneu_tab)
+                memory_util = self.vieneu_memory_slider.get()
                 enable_prefix_caching = backbone_config.get("enable_prefix_caching", True)
                 quant_policy = backbone_config.get("quant_policy", 0)
                 

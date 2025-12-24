@@ -4207,15 +4207,41 @@ class StudioGUI(ctk.CTk):
                     sys.path.insert(0, vieneu_path)
                 
                 # Determine actual device - Fix GPU detection
+                # Import torch and check CUDA availability with detailed debugging
                 import torch
-                has_cuda = torch.cuda.is_available()
+                
+                # Debug: Log PyTorch build info
+                torch_version = torch.__version__
+                torch_cuda_built = torch.cuda.is_built() if hasattr(torch.cuda, 'is_built') else torch.version.cuda is not None
+                torch_cuda_version = torch.version.cuda if torch.version.cuda else "Not built with CUDA"
+                
+                self.after(0, lambda v=torch_version, c=torch_cuda_version: self._vieneu_log(f"🔧 PyTorch: {v}, CUDA build: {c}"))
+                
+                # Check CUDA_VISIBLE_DEVICES environment variable
+                cuda_visible = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+                if cuda_visible is not None and cuda_visible.strip() == '':
+                    # Empty string means CUDA is explicitly disabled
+                    self.after(0, lambda: self._vieneu_log("⚠️ CUDA_VISIBLE_DEVICES is empty - CUDA disabled by environment"))
+                
+                # Check if PyTorch was built with CUDA support
+                if not torch_cuda_built:
+                    self.after(0, lambda: self._vieneu_log("❌ PyTorch không được build với CUDA! Cài đặt PyTorch GPU version."))
+                    has_cuda = False
+                else:
+                    # PyTorch has CUDA support, now check if GPU is actually available
+                    has_cuda = torch.cuda.is_available()
                 
                 # Log CUDA status for debugging
                 if has_cuda:
-                    cuda_device_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "Unknown"
-                    self.after(0, lambda name=cuda_device_name: self._vieneu_log(f"✅ Phát hiện GPU: {name}"))
+                    device_count = torch.cuda.device_count()
+                    cuda_device_name = torch.cuda.get_device_name(0) if device_count > 0 else "Unknown"
+                    self.after(0, lambda name=cuda_device_name, cnt=device_count: self._vieneu_log(f"✅ Phát hiện {cnt} GPU: {name}"))
                 else:
-                    self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
+                    # Provide more detailed error message
+                    if torch_cuda_built:
+                        self.after(0, lambda: self._vieneu_log("⚠️ PyTorch có CUDA nhưng không tìm thấy GPU. Kiểm tra driver NVIDIA."))
+                    else:
+                        self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
                 
                 # Determine device based on selection and CUDA availability
                 if device == "Auto":

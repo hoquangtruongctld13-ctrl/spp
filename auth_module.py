@@ -14,22 +14,14 @@ Usage:
         sys.exit(0)  # User cancelled or failed to login
 """
 
-from __future__ import annotations
 import os
 import sys
 import json
 import hashlib
 import platform
 import uuid
-try:
-    import tkinter as tk
-    from tkinter import ttk, messagebox
-    HAS_TK = True
-except ImportError:  # pragma: no cover - chạy headless/web
-    tk = None
-    ttk = None
-    messagebox = None
-    HAS_TK = False
+import tkinter as tk
+from tkinter import ttk, messagebox
 from typing import Optional, Dict, Tuple, Any
 from dataclasses import dataclass, asdict
 import threading
@@ -40,13 +32,6 @@ try:
     HAS_CUSTOMTKINTER = True
 except ImportError:
     HAS_CUSTOMTKINTER = False
-
-if not HAS_TK:
-    class _DummyWidget:
-        def __getattr__(self, attr):
-            raise ImportError("Tkinter không khả dụng trong môi trường hiện tại.")
-    ttk = ttk or _DummyWidget()
-    messagebox = messagebox or _DummyWidget()
 
 try:
     import requests
@@ -307,12 +292,6 @@ class AuthManager:
         Show login dialog and return True if login successful.
         This is a static method for convenience.
         """
-        if not HAS_TK:
-            print("Tkinter không khả dụng - bỏ qua bước đăng nhập giao diện.")
-            return True
-        if LoginWindow is None:
-            print("Login UI không khả dụng trong môi trường hiện tại.")
-            return True
         dialog = LoginWindow(parent, auth_manager)
         return dialog.result
 
@@ -320,7 +299,7 @@ class AuthManager:
 # =============================================================================
 # LOGIN WINDOW (CustomTkinter version)
 # =============================================================================
-if HAS_TK and HAS_CUSTOMTKINTER:
+if HAS_CUSTOMTKINTER:
     import queue
     
     class LoginWindow(ctk.CTkToplevel):
@@ -573,7 +552,7 @@ if HAS_TK and HAS_CUSTOMTKINTER:
             self.result = False
             self._close()
 
-elif HAS_TK and HAS_CUSTOMTKINTER:
+else:
     import queue as queue_module
     
     # Fallback to standard tkinter if customtkinter is not available
@@ -851,9 +830,6 @@ elif HAS_TK and HAS_CUSTOMTKINTER:
             """Handle close button"""
             self.result = False
             self._close()
-
-else:
-    LoginWindow = None
 
 
 # =============================================================================

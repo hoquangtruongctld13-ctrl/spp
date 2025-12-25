@@ -14,23 +14,10 @@ import gc
 # Constants
 # ============================================================================
 
-LLAMA_CPP_INSTALL_ERROR = """Lỗi khi tải model: Failed to import llama_cpp.
+LLAMA_CPP_INSTALL_ERROR = """Lỗi khi tải model: Không thể import llama_cpp.
 
-HƯỚNG DẪN CÀI ĐẶT llama-cpp-python:
-=====================================
-
-🔹 WINDOWS:
-   1. Cài Visual Studio Build Tools (C++ build tools)
-   2. pip install llama-cpp-python --force-reinstall
-
-🔹 LINUX/macOS:
-   pip install llama-cpp-python --force-reinstall
-
-🔹 NẾU VẪN LỖI - Cài từ wheel có sẵn (khuyến nghị):
-   pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
-
-📖 Chi tiết tại: https://github.com/pnnbao97/VieNeu-TTS
-   hoặc xem file VIENEU_TTS_GUIDE_VI.md"""
+Vui lòng cài đặt gói llama-cpp-python tương thích với hệ điều hành của bạn.
+Tham khảo tài liệu cục bộ đi kèm gói VN TTS để biết thêm chi tiết."""
 
 # ============================================================================
 # Shared Utilities

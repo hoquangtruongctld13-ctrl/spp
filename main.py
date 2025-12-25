@@ -2467,6 +2467,9 @@ class LongTextProcessor:
 # =============================================================================
 
 class StudioGUI(ctk.CTk):
+    SANITIZED_ERROR_FALLBACK = os.getenv("VN_TTS_ERROR_FALLBACK", "Đã xảy ra lỗi không xác định")
+    SANITIZE_URL_PATTERN = re.compile(r"(https?://\S+|github\.com/\S*)")
+
     def __init__(self):
         super().__init__()
 
@@ -4030,16 +4033,18 @@ class StudioGUI(ctk.CTk):
         message = f"VN TTS {safe_percent}%"
         if note:
             message = f"{message} - {note}"
-        print(message, flush=True)
-        self.after(0, lambda: self.vieneu_progress.set(safe_percent / 100))
-        self.after(0, lambda m=message: self._vieneu_log(m))
+        def _apply():
+            print(message, flush=True)
+            self.vieneu_progress.set(safe_percent / 100)
+            self._vieneu_log(message)
+        self.after(0, _apply)
 
-    @staticmethod
-    def _sanitize_error_message(message: str) -> str:
+    @classmethod
+    def _sanitize_error_message(cls, message: str) -> str:
         """Hide external links and paths from error output."""
-        clean = re.sub(r"https?://\\S+", "", message or "")
-        clean = re.sub(r"github\\.com/\\S*", "", clean)
-        return clean.strip() or "Đã xảy ra lỗi không xác định"
+        clean = cls.SANITIZE_URL_PATTERN.sub(" ", message or "")
+        clean = " ".join(clean.split())
+        return clean or cls.SANITIZED_ERROR_FALLBACK
 
     def _vieneu_on_backbone_change(self, value):
         """Handle backbone model selection change"""
@@ -4305,6 +4310,7 @@ class StudioGUI(ctk.CTk):
                         self.vieneu_using_fast = True
                     except Exception as e:
                         clean_err = self._sanitize_error_message(str(e))
+                        self._vieneu_progress_log(65, "Chuyển sang cấu hình thường")
                         self.after(0, lambda err=clean_err: self._vieneu_log(f"⚠️ Tối ưu GPU không khả dụng: {err}"))
                         self.vieneu_tts_instance = VieNeuTTS(
                             backbone_repo=backbone_repo,
@@ -4314,7 +4320,7 @@ class StudioGUI(ctk.CTk):
                         )
                         self.vieneu_using_fast = False
                 else:
-                    self._vieneu_progress_log(60, "Đang tải backend chuẩn")
+                    self._vieneu_progress_log(70, "Đang tải backend chuẩn")
                     self.vieneu_tts_instance = VieNeuTTS(
                         backbone_repo=backbone_repo,
                         backbone_device=backbone_device,
@@ -4349,13 +4355,18 @@ class StudioGUI(ctk.CTk):
                 err_msg = self._sanitize_error_message(str(e))
                 self.after(0, lambda: self._vieneu_log(f"❌ Lỗi thư viện: {err_msg}"))
                 self.after(0, lambda: self.vieneu_model_status.configure(text=f"❌ Lỗi import: {err_msg[:50]}", text_color="#ef4444"))
+                self._vieneu_progress_log(0, "Lỗi tải")
             except Exception as e:
                 err_msg = self._sanitize_error_message(str(e))
                 self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {err_msg}"))
                 self.after(0, lambda: self.vieneu_model_status.configure(text=f"❌ Lỗi: {err_msg[:50]}", text_color="#ef4444"))
+                self._vieneu_progress_log(0, "Lỗi tải")
             finally:
                 self.after(0, lambda: self.btn_vieneu_load.configure(state="normal"))
-                self._vieneu_progress_log(100, "Hoàn thành")
+                if self.vieneu_model_loaded:
+                    self._vieneu_progress_log(100, "Hoàn thành")
+                else:
+                    self._vieneu_progress_log(0, "Chưa hoàn thành")
         
         threading.Thread(target=load_thread, daemon=True).start()
 

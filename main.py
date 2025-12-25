@@ -422,7 +422,7 @@ def sanitize_error_message(msg: str) -> str:
     if not msg:
         return ""
     msg = re.sub(r"https?://\S+", "[đã ẩn]", msg)
-    msg = re.sub(r"github[^\s]*", "[đã ẩn]", msg, flags=re.IGNORECASE)
+    msg = re.sub(r"github(?:\.com|\.io)?\S*", "[đã ẩn]", msg, flags=re.IGNORECASE)
     return msg.replace("VieNeu-TTS", "VN TTS")
 
 
@@ -440,7 +440,7 @@ class ProgressRedirector(io.StringIO):
             return 0
         text = s.replace("\r", "\n")
         for segment in text.split("\n"):
-            match = re.search(r"(\d{1,3}(?:\.\d+)?)%", segment)
+            match = re.search(r"\b(100(?:\.\d+)?|[0-9]{1,2}(?:\.\d+)?)%", segment)
             if match:
                 try:
                     pct = float(match.group(1))
@@ -4136,7 +4136,7 @@ class StudioGUI(ctk.CTk):
         except Exception:
             return
         pct = max(0, min(100, pct))
-        if pct == self.vieneu_last_progress:
+        if self.vieneu_last_progress >= 0 and abs(pct - self.vieneu_last_progress) < 1:
             return
         self.vieneu_last_progress = pct
         self.after(0, lambda p=pct: self._vieneu_log(f"⏳ Đang tải: {p}%"))

@@ -2518,6 +2518,18 @@ class StudioGUI(ctk.CTk):
         self._init_settings_vars()
         self._load_settings()
 
+        # Tab labels for the studio shell (used by navigation + tabview)
+        self.tab_labels = {
+            "gemini": "🎛 Gemini Studio",
+            "longtext": "📜 Long Text",
+            "multivoice": "🎭 Multi Voice",
+            "capcut": "🎙 CapCut",
+            "edge": "🪟 Edge TTS",
+            "vieneu": "🇻🇳 VieNeu TTS",
+            "script": "🧾 Kịch Bản",
+            "settings": "⚙️ Settings",
+        }
+
         # UI Setup
         self._setup_ui()
         
@@ -2562,19 +2574,92 @@ class StudioGUI(ctk.CTk):
         self.vieneu_device = "Auto"
 
     def _setup_ui(self):
-        # Main Tabview
-        self.tabview = ctk.CTkTabview(self, width=1380, height=880)
-        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
+        # Studio shell layout
+        self.configure(fg_color="#050915")
+        shell = ctk.CTkFrame(self, fg_color="#050915")
+        shell.grid(row=0, column=0, sticky="nsew")
+        shell.grid_columnconfigure(1, weight=1)
+        shell.grid_rowconfigure(1, weight=1)
 
-        # Create Tabs
-        self.tab_dashboard = self.tabview.add("Gemini TTS")
-        self.tab_longtext = self.tabview.add("Long Text Engine")
-        self.tab_multivoice = self.tabview.add("Multi Voice (Đa giọng)")
-        self.tab_capcut = self.tabview.add("Capcut Voice")
-        self.tab_edge = self.tabview.add("Edge TTS")
-        self.tab_vieneu = self.tabview.add("🇻🇳 VN TTS")
-        self.tab_script = self.tabview.add("Đọc Kịch Bản")
-        self.tab_settings = self.tabview.add("⚙Configuration")
+        # Header
+        header = ctk.CTkFrame(shell, fg_color="#0f172a", corner_radius=16)
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=12, pady=(12, 6))
+        header.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(header, text="AIOLauncher Studio", font=("Inter", 24, "bold")).grid(row=0, column=0, sticky="w", padx=16, pady=(12, 2))
+        ctk.CTkLabel(header, text="Một không gian sản xuất giọng nói chuyên nghiệp – đa engine, đa ngôn ngữ", text_color="#cbd5e1", font=("Inter", 13)).grid(row=1, column=0, sticky="w", padx=16, pady=(0, 12))
+
+        stat_frame = ctk.CTkFrame(header, fg_color="#111827", corner_radius=12)
+        stat_frame.grid(row=0, column=2, rowspan=2, sticky="e", padx=12, pady=10)
+        ctk.CTkLabel(stat_frame, text="Realtime • Batch • Studio", text_color="#22c55e", font=("Inter", 12, "bold")).pack(padx=14, pady=12)
+
+        # Body container
+        body = ctk.CTkFrame(shell, fg_color="#050915")
+        body.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=12, pady=(0, 12))
+        body.grid_columnconfigure(1, weight=1)
+        body.grid_rowconfigure(0, weight=1)
+
+        # Navigation rail
+        nav = ctk.CTkFrame(body, fg_color="#0b1220", corner_radius=14)
+        nav.grid(row=0, column=0, sticky="ns", padx=(0, 12), pady=4)
+        nav.grid_columnconfigure(0, weight=1)
+
+        self.nav_buttons: Dict[str, ctk.CTkButton] = {}
+        nav_items = [
+            ("gemini", "🎛 Studio", "Gemini TTS"),
+            ("longtext", "📜 Long Text", "Batch engine"),
+            ("multivoice", "🎭 Multi Voice", "Dialog"),
+            ("capcut", "🎙 CapCut", "TikTok voice"),
+            ("edge", "🪟 Edge TTS", "Microsoft"),
+            ("vieneu", "🇻🇳 VieNeu", "Vietnamese"),
+            ("script", "🧾 Kịch bản", "Docs to audio"),
+            ("settings", "⚙️ Settings", "API & device"),
+        ]
+        for idx, (key, title, subtitle) in enumerate(nav_items):
+            btn = ctk.CTkButton(
+                nav,
+                text=f"{title}\n{subtitle}",
+                anchor="w",
+                fg_color="#111827",
+                hover_color="#1f2937",
+                text_color="#e2e8f0",
+                corner_radius=12,
+                height=64,
+                command=lambda k=key: self._switch_to_tab(k),
+            )
+            btn.grid(row=idx, column=0, sticky="ew", padx=10, pady=(8 if idx == 0 else 6, 0))
+            self.nav_buttons[key] = btn
+
+        # Content area
+        content = ctk.CTkFrame(body, fg_color="#0b1220", corner_radius=16)
+        content.grid(row=0, column=1, sticky="nsew")
+        content.grid_columnconfigure(0, weight=1)
+        content.grid_rowconfigure(0, weight=1)
+
+        self.tabview = ctk.CTkTabview(
+            content,
+            width=1380,
+            height=880,
+            corner_radius=14,
+            fg_color="#0f172a",
+        )
+        self.tabview.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+
+        # Hide default segmented tab header to keep studio-style navigation
+        try:
+            self.tabview._segmented_button.grid_forget()
+        except Exception:
+            pass
+
+        # Create Tabs using new labels
+        self.tab_dashboard = self.tabview.add(self.tab_labels["gemini"])
+        self.tab_longtext = self.tabview.add(self.tab_labels["longtext"])
+        self.tab_multivoice = self.tabview.add(self.tab_labels["multivoice"])
+        self.tab_capcut = self.tabview.add(self.tab_labels["capcut"])
+        self.tab_edge = self.tabview.add(self.tab_labels["edge"])
+        self.tab_vieneu = self.tabview.add(self.tab_labels["vieneu"])
+        self.tab_script = self.tabview.add(self.tab_labels["script"])
+        self.tab_settings = self.tabview.add(self.tab_labels["settings"])
 
         # Setup Content
         self._setup_settings_tab()
@@ -2588,6 +2673,7 @@ class StudioGUI(ctk.CTk):
         
         # Bind optimized paste handlers to all text inputs to prevent UI lag
         self._bind_optimized_paste_handlers()
+        self._switch_to_tab("gemini")
 
     def _bind_optimized_paste_handlers(self):
         """Bind optimized paste handlers to all text input widgets to prevent UI lag"""
@@ -2620,6 +2706,30 @@ class StudioGUI(ctk.CTk):
             # Also bind Command-v for Mac
             textbox.bind("<Command-v>", lambda e, tb=textbox: self._optimized_paste(e, tb))
             textbox.bind("<Command-V>", lambda e, tb=textbox: self._optimized_paste(e, tb))
+
+    def _switch_to_tab(self, key: str):
+        """Navigate to a tab using the studio sidebar and keep nav state in sync"""
+        label = self.tab_labels.get(key)
+        if not label:
+            return
+        try:
+            self.tabview.set(label)
+        except Exception:
+            pass
+        self._highlight_nav(key)
+
+    def _highlight_nav(self, active_key: str):
+        """Update sidebar button states to reflect the active tab"""
+        if not hasattr(self, "nav_buttons"):
+            return
+        for key, btn in self.nav_buttons.items():
+            is_active = key == active_key
+            btn.configure(
+                fg_color="#22c55e" if is_active else "#111827",
+                text_color="#0b1220" if is_active else "#e2e8f0",
+                hover_color="#16a34a" if is_active else "#1f2937",
+            )
+        self.active_tab_key = active_key
     
     def _optimized_paste(self, event, textbox):
         """
@@ -5401,13 +5511,13 @@ class StudioGUI(ctk.CTk):
             session_id = self.entry_capcut_session.get().strip() if hasattr(self, 'entry_capcut_session') else self.capcut_session_id
             if not session_id:
                 messagebox.showerror("Lỗi", "Vui lòng nhập Capcut Session ID trong tab Cài đặt!")
-                self.tabview.set("⚙️ Configuration")
+                self._switch_to_tab("settings")
                 return
         elif engine == "google":
             api_keys = self._get_api_keys()
             if not api_keys:
                 messagebox.showerror("Lỗi", "Vui lòng nhập API key trong tab Cài đặt!")
-                self.tabview.set("⚙️ Configuration")
+                self._switch_to_tab("settings")
                 return
         
         # Start processing
@@ -5439,13 +5549,13 @@ class StudioGUI(ctk.CTk):
             session_id = self.entry_capcut_session.get().strip() if hasattr(self, 'entry_capcut_session') else self.capcut_session_id
             if not session_id:
                 messagebox.showerror("Lỗi", "Vui lòng nhập Capcut Session ID trong tab Cài đặt!")
-                self.tabview.set("⚙️ Configuration")
+                self._switch_to_tab("settings")
                 return
         elif engine == "google":
             api_keys = self._get_api_keys()
             if not api_keys:
                 messagebox.showerror("Lỗi", "Vui lòng nhập API key trong tab Cài đặt!")
-                self.tabview.set("⚙️ Configuration")
+                self._switch_to_tab("settings")
                 return
         
         # Start processing
@@ -6050,7 +6160,7 @@ class StudioGUI(ctk.CTk):
         
         if not session_id:
             messagebox.showerror("Lỗi", "Vui lòng nhập Session ID trong tab Cài đặt!")
-            self.tabview.set("⚙️ Configuration")
+            self._switch_to_tab("settings")
             return
         
         raw_text = self.capcut_text_input.get("1.0", "end").strip()
@@ -6285,7 +6395,7 @@ class StudioGUI(ctk.CTk):
         
         if not session_id:
             messagebox.showerror("Lỗi", "Vui lòng nhập Session ID trong tab Cài đặt!")
-            self.tabview.set("⚙️ Configuration")
+            self._switch_to_tab("settings")
             return
         
         if not input_path or not os.path.exists(input_path):
@@ -7559,7 +7669,7 @@ class StudioGUI(ctk.CTk):
         api_keys = self._get_api_keys()
         if not api_keys:
             messagebox.showerror("Error", "Thiếu API key")
-            self.tabview.set("⚙️ Configuration")
+            self._switch_to_tab("settings")
             return
         
         if not self.subtitles:

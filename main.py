@@ -422,7 +422,7 @@ def sanitize_error_message(msg: str) -> str:
     if not msg:
         return ""
     msg = re.sub(r"https?://\S+", "[đã ẩn]", msg)
-    msg = re.sub(r"github(?:\.com|\.io)?\S*", "[đã ẩn]", msg, flags=re.IGNORECASE)
+    msg = re.sub(r"(?:https?://)?github(?:\.com|\.io)/\S+", "[đã ẩn]", msg, flags=re.IGNORECASE)
     return msg.replace("VieNeu-TTS", "VN TTS")
 
 
@@ -440,7 +440,7 @@ class ProgressRedirector(io.StringIO):
             return 0
         text = s.replace("\r", "\n")
         for segment in text.split("\n"):
-            match = re.search(r"\b(100(?:\.\d+)?|[0-9]{1,2}(?:\.\d+)?)%", segment)
+            match = re.search(r"\b((?:100|[0-9]{1,2}(?:\.\d+)?))%", segment)
             if match:
                 try:
                     pct = float(match.group(1))
@@ -4241,6 +4241,7 @@ class StudioGUI(ctk.CTk):
         
         def load_thread():
             progress_stream = ProgressRedirector(self._vieneu_progress_update)
+            max_err_len = ERROR_MSG_MAX_LENGTH
             try:
                 with redirect_stdout(progress_stream), redirect_stderr(progress_stream):
                     backbone_name = self.vieneu_backbone_var.get()
@@ -4390,11 +4391,11 @@ class StudioGUI(ctk.CTk):
                 self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))
                 self.after(0, lambda: self._vieneu_log("❌ Không thể tải model VN TTS"))
                 self.after(0, lambda: self.vieneu_model_status.configure(text="❌ Tải thất bại", text_color="#ef4444"))
-                self.after(0, lambda: self._vieneu_log(f"Chi tiết: {err_msg[:ERROR_MSG_MAX_LENGTH]}"))
+                self.after(0, lambda: self._vieneu_log(f"Chi tiết: {err_msg[:max_err_len]}"))
             except Exception as e:
                 err_msg = sanitize_error_message(str(e))
                 self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))
-                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {err_msg[:ERROR_MSG_MAX_LENGTH]}"))
+                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {err_msg[:max_err_len]}"))
                 self.after(0, lambda: self.vieneu_model_status.configure(text="❌ Tải thất bại", text_color="#ef4444"))
             finally:
                 self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))

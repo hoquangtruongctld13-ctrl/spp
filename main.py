@@ -427,7 +427,7 @@ def sanitize_error_message(msg: str) -> str:
     return msg.replace("VieNeu-TTS", "VN TTS")
 
 PROGRESS_PERCENT_RE = re.compile(
-    r"(?<!\d)(100(?:\.0+)?|[0-9]{1,2}(?:\.\d+)?)%"
+    r"(?<!\d)(100(?:\.0+)?|[0-9]{1,2}(?:\.\d+)?)(%(?!\d))"
 )
 
 
@@ -450,7 +450,7 @@ class ProgressRedirector(io.StringIO):
                 try:
                     pct = float(match.group(1))
                     self.on_progress(pct)
-                except Exception:
+                except (ValueError, TypeError):
                     pass
         return len(s)
 
@@ -4137,7 +4137,7 @@ class StudioGUI(ctk.CTk):
         """Hiển thị tiến trình tải model (%) trên log và status."""
         try:
             pct = int(round(float(percent)))
-        except Exception:
+        except (ValueError, TypeError):
             return
         pct = max(0, min(100, pct))
         if pct == self.vieneu_last_progress:

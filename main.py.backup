@@ -30,9 +30,9 @@ if _edge_module_path not in sys.path:
 # Import authentication module
 from auth_module import AuthManager, require_login
 
-# Cấu hình giao diện CustomTkinter - Modern Studio Theme
-ctk.set_appearance_mode("Dark")  # Professional dark mode
-ctk.set_default_color_theme("blue")  # Modern blue accent
+# Cấu hình giao diện CustomTkinter
+ctk.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 try:
     import pyaudio
@@ -2473,12 +2473,12 @@ class StudioGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Window Setup - Modern Professional Studio
-        self.title("Professional TTS Studio")
+        # Window Setup
+        self.title("AIOLuancher TTS")
         
-        # Professional window sizing and positioning
-        window_width = 1600
-        window_height = 950
+        # FIX: Set window size and center it properly to prevent jumping/lag
+        window_width = 1400
+        window_height = 900
         
         # Get screen dimensions
         screen_width = self.winfo_screenwidth()
@@ -2490,7 +2490,7 @@ class StudioGUI(ctk.CTk):
         
         # Set geometry with position
         self.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.minsize(1400, 850)
+        self.minsize(1200, 800)
         
         # Grid layout
         self.grid_columnconfigure(0, weight=1)
@@ -2562,25 +2562,29 @@ class StudioGUI(ctk.CTk):
         self.vieneu_device = "Auto"
 
     def _setup_ui(self):
-        # Modern Main Container with clean layout
-        self.tabview = ctk.CTkTabview(self, width=1580, height=930)
-        self.tabview.pack(fill="both", expand=True, padx=15, pady=15)
+        # Main Tabview
+        self.tabview = ctk.CTkTabview(self, width=1380, height=880)
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Create Simplified Tabs - Professional Studio Layout
+        # Create Tabs
         self.tab_dashboard = self.tabview.add("Gemini TTS")
-        self.tab_longtext = self.tabview.add("Long Text")
-        self.tab_capcut = self.tabview.add("Capcut")
+        self.tab_longtext = self.tabview.add("Long Text Engine")
+        self.tab_multivoice = self.tabview.add("Multi Voice (Đa giọng)")
+        self.tab_capcut = self.tabview.add("Capcut Voice")
         self.tab_edge = self.tabview.add("Edge TTS")
-        self.tab_vieneu = self.tabview.add("VN TTS")
-        self.tab_settings = self.tabview.add("Settings")
+        self.tab_vieneu = self.tabview.add("🇻🇳 VN TTS")
+        self.tab_script = self.tabview.add("Đọc Kịch Bản")
+        self.tab_settings = self.tabview.add("⚙Configuration")
 
-        # Setup Content with Modern Design
+        # Setup Content
         self._setup_settings_tab()
         self._setup_dashboard_tab()
         self._setup_longtext_tab()
+        self._setup_multivoice_tab()
         self._setup_capcut_tab()
         self._setup_edge_tab()
         self._setup_vieneu_tab()
+        self._setup_script_tab()
         
         # Bind optimized paste handlers to all text inputs to prevent UI lag
         self._bind_optimized_paste_handlers()
@@ -2687,13 +2691,13 @@ class StudioGUI(ctk.CTk):
         tab.grid_rowconfigure(0, weight=1)
 
         # --- Column 1: GOOGLE GEMINI TTS & THREADING ---
-        google_frame = ctk.CTkFrame(tab, fg_color="#1e2a3a", corner_radius=12)
-        google_frame.grid(row=0, column=0, sticky="nsew", padx=8, pady=12)
+        google_frame = ctk.CTkFrame(tab, fg_color="#1a2332")
+        google_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=10)
         
-        # Modern Header
-        header_google = ctk.CTkFrame(google_frame, fg_color="#2d5f8d", height=45, corner_radius=10)
-        header_google.pack(fill="x", padx=8, pady=8)
-        ctk.CTkLabel(header_google, text="GOOGLE GEMINI TTS", font=("Roboto", 13, "bold"), text_color="white").pack(pady=10)
+        # Header
+        header_google = ctk.CTkFrame(google_frame, fg_color="#2563eb", height=40)
+        header_google.pack(fill="x")
+        ctk.CTkLabel(header_google, text="GOOGLE GEMINI TTS", font=("Roboto", 14, "bold"), text_color="white").pack(pady=8)
 
         # API Keys
         ctk.CTkLabel(google_frame, text="API KEYS (mỗi key 1 dòng)", font=("Roboto", 12, "bold"), text_color="#60a5fa").pack(anchor="w", padx=15, pady=(15, 5))
@@ -2762,13 +2766,13 @@ class StudioGUI(ctk.CTk):
         self.slider_workers.pack(fill="x", padx=15, pady=5)
 
 
-        # --- Column 2: CAPCUT VOICE SETTINGS ---
-        capcut_frame = ctk.CTkFrame(tab, fg_color="#1e2a3a", corner_radius=12)
-        capcut_frame.grid(row=0, column=1, sticky="nsew", padx=8, pady=12)
+        # --- Column 2: CAPCUT VOICE SETTINGS (Giữ nguyên) ---
+        capcut_frame = ctk.CTkFrame(tab, fg_color="#1a2332")
+        capcut_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=10)
         
-        header_capcut = ctk.CTkFrame(capcut_frame, fg_color="#8d4a2d", height=45, corner_radius=10)
-        header_capcut.pack(fill="x", padx=8, pady=8)
-        ctk.CTkLabel(header_capcut, text="CAPCUT VOICE", font=("Roboto", 13, "bold"), text_color="white").pack(pady=10)
+        header_capcut = ctk.CTkFrame(capcut_frame, fg_color="#dc2626", height=40)
+        header_capcut.pack(fill="x")
+        ctk.CTkLabel(header_capcut, text="CAPCUT VOICE", font=("Roboto", 14, "bold"), text_color="white").pack(pady=8)
 
         ctk.CTkLabel(capcut_frame, text="Session ID (TikTok)", font=("Roboto", 12, "bold"), text_color="#f87171").pack(anchor="w", padx=15, pady=(15, 5))
         ctk.CTkLabel(capcut_frame, text="Lấy từ Cookie sessionid của TikTok", text_color="gray", font=("Arial", 10)).pack(anchor="w", padx=15)
@@ -2790,9 +2794,7 @@ class StudioGUI(ctk.CTk):
         self.entry_new_voice_name = ctk.CTkEntry(add_voice_frame, placeholder_text="Tên hiển thị", width=150)
         self.entry_new_voice_name.pack(side="left", padx=(0, 5))
         
-        btn_add_voice = ctk.CTkButton(add_voice_frame, text="Add Voice", width=80, 
-                                     fg_color="#4a7c59", hover_color="#3d6b4a",
-                                     corner_radius=8, command=self._add_custom_capcut_voice)
+        btn_add_voice = ctk.CTkButton(add_voice_frame, text="+ Thêm", width=70, fg_color="#22c55e", command=self._add_custom_capcut_voice)
         btn_add_voice.pack(side="left")
 
         # Custom voices list
@@ -2803,14 +2805,14 @@ class StudioGUI(ctk.CTk):
         self._refresh_custom_voice_list()
 
 
-        # --- Column 3: EDGE TTS CONFIG ---
-        edge_frame = ctk.CTkFrame(tab, fg_color="#1e2a3a", corner_radius=12)
-        edge_frame.grid(row=0, column=2, sticky="nsew", padx=8, pady=12)
+        # --- Column 3: EDGE TTS CONFIG (Đã đổi tên và bỏ phần Multi-thread) ---
+        edge_frame = ctk.CTkFrame(tab, fg_color="#1a2332")
+        edge_frame.grid(row=0, column=2, sticky="nsew", padx=5, pady=10)
         
-        # Modern Header
-        header_edge = ctk.CTkFrame(edge_frame, fg_color="#5a4a8d", height=45, corner_radius=10)
-        header_edge.pack(fill="x", padx=8, pady=8)
-        ctk.CTkLabel(header_edge, text="EDGE TTS & FFMPEG", font=("Roboto", 13, "bold"), text_color="white").pack(pady=10)
+        # Header (Màu tím hoặc xanh đậm cho Edge)
+        header_edge = ctk.CTkFrame(edge_frame, fg_color="#7c3aed", height=40)
+        header_edge.pack(fill="x")
+        ctk.CTkLabel(header_edge, text="EDGE TTS & FFMPEG", font=("Roboto", 14, "bold"), text_color="white").pack(pady=8)
 
         # FFmpeg Settings Section
         ctk.CTkLabel(edge_frame, text="FFmpeg Path", font=("Roboto", 12, "bold"), text_color="#a78bfa").pack(anchor="w", padx=15, pady=(15, 5))
@@ -2823,7 +2825,7 @@ class StudioGUI(ctk.CTk):
         self.entry_ffmpeg_path.pack(side="left", fill="x", expand=True, padx=(0, 5))
         self.entry_ffmpeg_path.insert(0, self.ffmpeg_path)
         
-        btn_browse_ffmpeg = ctk.CTkButton(ffmpeg_row, text="...", width=40, command=self._browse_ffmpeg)
+        btn_browse_ffmpeg = ctk.CTkButton(ffmpeg_row, text="📂", width=40, command=self._browse_ffmpeg)
         btn_browse_ffmpeg.pack(side="right")
 
         # Edge TTS Cache info
@@ -2833,18 +2835,15 @@ class StudioGUI(ctk.CTk):
         self.lbl_edge_cache = ctk.CTkLabel(edge_frame, text="Voice cache: Chưa tải", text_color="gray")
         self.lbl_edge_cache.pack(anchor="w", padx=15, pady=(10, 5))
         
-        btn_refresh_edge = ctk.CTkButton(edge_frame, text="Refresh Voice List", 
-                                        fg_color="#5a6a8d", hover_color="#4a5a7d",
-                                        corner_radius=8, command=self._refresh_edge_voices)
+        btn_refresh_edge = ctk.CTkButton(edge_frame, text="Tải lại Voice List", fg_color="#6366f1", command=self._refresh_edge_voices)
         btn_refresh_edge.pack(fill="x", padx=15, pady=5)
         
         # Spacer để đẩy nút Save xuống đáy
         ctk.CTkFrame(edge_frame, fg_color="transparent").pack(fill="both", expand=True)
 
-        # Save Button - Modern Professional Style
-        btn_save = ctk.CTkButton(edge_frame, text="SAVE ALL SETTINGS", height=48, 
-                                 fg_color="#4a7c59", hover_color="#3d6b4a", 
-                                 font=("Roboto", 13, "bold"), corner_radius=10,
+        # Save Button Area
+        btn_save = ctk.CTkButton(edge_frame, text="LƯU TẤT CẢ CÀI ĐẶT", height=50, 
+                                 fg_color="#22c55e", hover_color="#16a34a", font=("Roboto", 14, "bold"),
                                  command=self._save_settings_from_ui)
         btn_save.pack(side="bottom", fill="x", padx=15, pady=15)
 
@@ -3121,7 +3120,7 @@ class StudioGUI(ctk.CTk):
         builder_frame = ctk.CTkFrame(tab, fg_color="transparent")
         builder_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=0)
         
-        ctk.CTkLabel(builder_frame, text="Script Builder", font=("Roboto", 16, "bold")).pack(anchor="w", pady=(10, 5))
+        ctk.CTkLabel(builder_frame, text="📝 Trình tạo kịch bản", font=("Roboto", 16, "bold")).pack(anchor="w", pady=(10, 5))
 
         # Style Instructions
         ctk.CTkLabel(builder_frame, text="Chỉ dẫn phong cách (Style instructions)").pack(anchor="w", pady=(5, 2))
@@ -3177,7 +3176,7 @@ class StudioGUI(ctk.CTk):
         settings_frame = ctk.CTkFrame(tab, fg_color="#1e1e1e", corner_radius=0)
         settings_frame.grid(row=0, column=2, sticky="nsew", padx=(2, 0), pady=0)
 
-        ctk.CTkLabel(settings_frame, text="Voice Settings", font=("Roboto", 14, "bold")).pack(anchor="w", padx=15, pady=(15, 10))
+        ctk.CTkLabel(settings_frame, text="⚙️ Cài đặt giọng đọc", font=("Roboto", 14, "bold")).pack(anchor="w", padx=15, pady=(15, 10))
 
         # Scrollable Settings
         setting_scroll = ctk.CTkScrollableFrame(settings_frame, fg_color="transparent")
@@ -3312,13 +3311,13 @@ class StudioGUI(ctk.CTk):
         btn_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=15, pady=5)
 
-        self.btn_capcut_generate = ctk.CTkButton(btn_frame, text="CREATE AUDIO", fg_color="#22c55e", font=("Roboto", 12, "bold"), command=self._capcut_generate)
+        self.btn_capcut_generate = ctk.CTkButton(btn_frame, text="🎙️ TẠO AUDIO", fg_color="#22c55e", font=("Roboto", 12, "bold"), command=self._capcut_generate)
         self.btn_capcut_generate.pack(side="left", padx=5)
 
-        self.btn_capcut_play = ctk.CTkButton(btn_frame, text="PLAY", fg_color="#3b82f6", state="disabled", command=self._capcut_play)
+        self.btn_capcut_play = ctk.CTkButton(btn_frame, text="▶ PHÁT", fg_color="#3b82f6", state="disabled", command=self._capcut_play)
         self.btn_capcut_play.pack(side="left", padx=5)
 
-        self.btn_capcut_save = ctk.CTkButton(btn_frame, text="SAVE FILE", fg_color="#6366f1", state="disabled", command=self._capcut_save)
+        self.btn_capcut_save = ctk.CTkButton(btn_frame, text="💾 LƯU FILE", fg_color="#6366f1", state="disabled", command=self._capcut_save)
         self.btn_capcut_save.pack(side="left", padx=5)
 
         self.capcut_status_lbl = ctk.CTkLabel(btn_frame, text="Sẵn sàng", text_color="gray")
@@ -3328,7 +3327,7 @@ class StudioGUI(ctk.CTk):
         srt_frame = ctk.CTkFrame(right_frame, fg_color="#1a1a2e")
         srt_frame.grid(row=1, column=0, sticky="nsew", pady=5)
 
-        ctk.CTkLabel(srt_frame, text="CREATE FROM FILE SRT/VTT HOẶC THƯ MỤC", font=("Roboto", 14, "bold"), text_color="#f87171").pack(anchor="w", padx=15, pady=(15, 5))
+        ctk.CTkLabel(srt_frame, text="📝 TẠO VOICE TỪ FILE SRT/VTT HOẶC THƯ MỤC", font=("Roboto", 14, "bold"), text_color="#f87171").pack(anchor="w", padx=15, pady=(15, 5))
 
         # File selection
         file_row = ctk.CTkFrame(srt_frame, fg_color="transparent")
@@ -3337,8 +3336,8 @@ class StudioGUI(ctk.CTk):
         self.capcut_srt_file_entry = ctk.CTkEntry(file_row, placeholder_text="Chọn file SRT/VTT hoặc thư mục chứa txt/docx...", width=300)
         self.capcut_srt_file_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
-        ctk.CTkButton(file_row, text="... File", width=60, command=self._capcut_browse_srt).pack(side="left", padx=2)
-        ctk.CTkButton(file_row, text="Folder", width=80, command=self._capcut_browse_folder).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📂 File", width=60, command=self._capcut_browse_srt).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📁 Thư mục", width=80, command=self._capcut_browse_folder).pack(side="left", padx=2)
 
         # Output folder
         out_row = ctk.CTkFrame(srt_frame, fg_color="transparent")
@@ -3348,7 +3347,7 @@ class StudioGUI(ctk.CTk):
         self.capcut_srt_output_entry.insert(0, "./capcut_output")
         self.capcut_srt_output_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        ctk.CTkButton(out_row, text="Browse", width=100, command=self._capcut_browse_output).pack(side="left")
+        ctk.CTkButton(out_row, text="📁 Chọn", width=100, command=self._capcut_browse_output).pack(side="left")
 
         # Options row - merge option
         opt_row = ctk.CTkFrame(srt_frame, fg_color="transparent")
@@ -3364,7 +3363,7 @@ class StudioGUI(ctk.CTk):
         proc_btn_row.pack(fill="x", padx=15, pady=10)
 
         self.btn_capcut_process_srt = ctk.CTkButton(
-            proc_btn_row, text="PROCESS FILES", 
+            proc_btn_row, text="🚀 XỬ LÝ FILE/THƯ MỤC", 
             fg_color="#dc2626", hover_color="#b91c1c",
             font=("Roboto", 12, "bold"), height=40,
             command=self._capcut_process_srt
@@ -3372,7 +3371,7 @@ class StudioGUI(ctk.CTk):
         self.btn_capcut_process_srt.pack(side="left", padx=5)
 
         self.btn_capcut_stop_srt = ctk.CTkButton(
-            proc_btn_row, text="STOP", 
+            proc_btn_row, text="⏹ DỪNG", 
             fg_color="#64748b", state="disabled",
             command=self._capcut_stop_srt
         )
@@ -3513,13 +3512,13 @@ class StudioGUI(ctk.CTk):
         btn_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=15, pady=5)
 
-        self.btn_edge_generate = ctk.CTkButton(btn_frame, text="CREATE AUDIO", fg_color="#22c55e", font=("Roboto", 12, "bold"), command=self._edge_generate)
+        self.btn_edge_generate = ctk.CTkButton(btn_frame, text="🎙️ TẠO AUDIO", fg_color="#22c55e", font=("Roboto", 12, "bold"), command=self._edge_generate)
         self.btn_edge_generate.pack(side="left", padx=5)
 
-        self.btn_edge_play = ctk.CTkButton(btn_frame, text="PLAY", fg_color="#3b82f6", state="disabled", command=self._edge_play)
+        self.btn_edge_play = ctk.CTkButton(btn_frame, text="▶ PHÁT", fg_color="#3b82f6", state="disabled", command=self._edge_play)
         self.btn_edge_play.pack(side="left", padx=5)
 
-        self.btn_edge_save = ctk.CTkButton(btn_frame, text="SAVE FILE", fg_color="#6366f1", state="disabled", command=self._edge_save)
+        self.btn_edge_save = ctk.CTkButton(btn_frame, text="💾 LƯU FILE", fg_color="#6366f1", state="disabled", command=self._edge_save)
         self.btn_edge_save.pack(side="left", padx=5)
 
         self.edge_status_lbl = ctk.CTkLabel(btn_frame, text="Sẵn sàng", text_color="gray")
@@ -3529,7 +3528,7 @@ class StudioGUI(ctk.CTk):
         srt_frame = ctk.CTkFrame(right_frame, fg_color="#0f172a")
         srt_frame.grid(row=1, column=0, sticky="nsew", pady=5)
 
-        ctk.CTkLabel(srt_frame, text="CREATE FROM FILE SRT/VTT HOẶC THƯ MỤC", font=("Roboto", 14, "bold"), text_color="#60a5fa").pack(anchor="w", padx=15, pady=(15, 5))
+        ctk.CTkLabel(srt_frame, text="📝 TẠO VOICE TỪ FILE SRT/VTT HOẶC THƯ MỤC", font=("Roboto", 14, "bold"), text_color="#60a5fa").pack(anchor="w", padx=15, pady=(15, 5))
 
         # File selection
         file_row = ctk.CTkFrame(srt_frame, fg_color="transparent")
@@ -3538,8 +3537,8 @@ class StudioGUI(ctk.CTk):
         self.edge_srt_file_entry = ctk.CTkEntry(file_row, placeholder_text="Chọn file SRT/VTT hoặc thư mục...", width=300)
         self.edge_srt_file_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
-        ctk.CTkButton(file_row, text="... File", width=60, command=self._edge_browse_srt).pack(side="left", padx=2)
-        ctk.CTkButton(file_row, text="Folder", width=80, command=self._edge_browse_folder).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📂 File", width=60, command=self._edge_browse_srt).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📁 Thư mục", width=80, command=self._edge_browse_folder).pack(side="left", padx=2)
 
         # Output folder
         out_row = ctk.CTkFrame(srt_frame, fg_color="transparent")
@@ -3549,7 +3548,7 @@ class StudioGUI(ctk.CTk):
         self.edge_srt_output_entry.insert(0, "./edge_output")
         self.edge_srt_output_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        ctk.CTkButton(out_row, text="Browse", width=100, command=self._edge_browse_output).pack(side="left")
+        ctk.CTkButton(out_row, text="📁 Chọn", width=100, command=self._edge_browse_output).pack(side="left")
 
         # Options row
         opt_row = ctk.CTkFrame(srt_frame, fg_color="transparent")
@@ -3569,7 +3568,7 @@ class StudioGUI(ctk.CTk):
         proc_btn_row.pack(fill="x", padx=15, pady=10)
 
         self.btn_edge_process_srt = ctk.CTkButton(
-            proc_btn_row, text="PROCESS FILES", 
+            proc_btn_row, text="🚀 XỬ LÝ FILE/THƯ MỤC", 
             fg_color="#2563eb", hover_color="#1d4ed8",
             font=("Roboto", 12, "bold"), height=40,
             command=self._edge_process_srt
@@ -3577,7 +3576,7 @@ class StudioGUI(ctk.CTk):
         self.btn_edge_process_srt.pack(side="left", padx=5)
 
         self.btn_edge_stop_srt = ctk.CTkButton(
-            proc_btn_row, text="STOP", 
+            proc_btn_row, text="⏹ DỪNG", 
             fg_color="#64748b", state="disabled",
             command=self._edge_stop_srt
         )
@@ -3653,7 +3652,7 @@ class StudioGUI(ctk.CTk):
         content_scroll.pack(fill="both", expand=True, padx=5, pady=5)
 
         # ===== MODEL CONFIGURATION SECTION =====
-        ctk.CTkLabel(content_scroll, text="MODEL CONFIGURATION", font=("Roboto", 12, "bold"), text_color="#818cf8").pack(anchor="w", padx=10, pady=(10, 5))
+        ctk.CTkLabel(content_scroll, text="⚙️ CẤU HÌNH MODEL", font=("Roboto", 12, "bold"), text_color="#818cf8").pack(anchor="w", padx=10, pady=(10, 5))
         
         model_frame = ctk.CTkFrame(content_scroll, fg_color="#1f2937")
         model_frame.pack(fill="x", padx=10, pady=5)
@@ -3778,7 +3777,7 @@ class StudioGUI(ctk.CTk):
         # Preview preset voice
         self.btn_vieneu_preview_preset = ctk.CTkButton(
             self.vieneu_preset_frame,
-            text="Preview Voice",
+            text="▶ Nghe thử giọng mẫu",
             fg_color="#3b82f6",
             command=self._vieneu_preview_preset_voice
         )
@@ -3788,7 +3787,7 @@ class StudioGUI(ctk.CTk):
         self.vieneu_custom_frame = ctk.CTkFrame(voice_frame, fg_color="transparent")
         # Hidden by default
         
-        ctk.CTkLabel(self.vieneu_custom_frame, text="... Upload file audio mẫu (.wav):", font=("Roboto", 10)).pack(anchor="w", pady=(5, 2))
+        ctk.CTkLabel(self.vieneu_custom_frame, text="📂 Upload file audio mẫu (.wav):", font=("Roboto", 10)).pack(anchor="w", pady=(5, 2))
         
         custom_audio_row = ctk.CTkFrame(self.vieneu_custom_frame, fg_color="transparent")
         custom_audio_row.pack(fill="x", pady=2)
@@ -3796,16 +3795,16 @@ class StudioGUI(ctk.CTk):
         self.vieneu_custom_audio_entry = ctk.CTkEntry(custom_audio_row, placeholder_text="Chọn file audio...")
         self.vieneu_custom_audio_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
         
-        ctk.CTkButton(custom_audio_row, text="...", width=40, command=self._vieneu_browse_custom_audio).pack(side="left")
+        ctk.CTkButton(custom_audio_row, text="📂", width=40, command=self._vieneu_browse_custom_audio).pack(side="left")
         
-        ctk.CTkLabel(self.vieneu_custom_frame, text="Reference Text:", font=("Roboto", 10)).pack(anchor="w", pady=(10, 2))
+        ctk.CTkLabel(self.vieneu_custom_frame, text="📝 Nội dung lời thoại mẫu:", font=("Roboto", 10)).pack(anchor="w", pady=(10, 2))
         self.vieneu_custom_text_input = ctk.CTkTextbox(self.vieneu_custom_frame, height=80, font=("Roboto", 11))
         self.vieneu_custom_text_input.pack(fill="x", pady=2)
         self.vieneu_custom_text_input.insert("1.0", "Nhập nội dung lời thoại trong file audio mẫu...")
         
         self.btn_vieneu_encode_custom = ctk.CTkButton(
             self.vieneu_custom_frame,
-            text="Encode Voice",
+            text="🔧 Mã hóa giọng mẫu",
             fg_color="#8b5cf6",
             command=self._vieneu_encode_custom_voice
         )
@@ -3815,13 +3814,13 @@ class StudioGUI(ctk.CTk):
         save_voice_frame = ctk.CTkFrame(self.vieneu_custom_frame, fg_color="transparent")
         save_voice_frame.pack(fill="x", pady=(5, 2))
         
-        ctk.CTkLabel(save_voice_frame, text="Voice Name:", font=("Roboto", 10)).pack(side="left", padx=(0, 5))
+        ctk.CTkLabel(save_voice_frame, text="💾 Lưu giọng với tên:", font=("Roboto", 10)).pack(side="left", padx=(0, 5))
         self.vieneu_save_voice_name = ctk.CTkEntry(save_voice_frame, placeholder_text="Tên giọng (VD: Hùng nam miền Bắc)", width=180)
         self.vieneu_save_voice_name.pack(side="left", fill="x", expand=True)
         
         self.btn_vieneu_save_voice = ctk.CTkButton(
             self.vieneu_custom_frame,
-            text="SAVE VOICE",
+            text="💾 LƯU GIỌNG VÀO DANH SÁCH",
             fg_color="#f59e0b",
             hover_color="#d97706",
             state="disabled",
@@ -3840,7 +3839,7 @@ class StudioGUI(ctk.CTk):
         # Clone Voice button - appears after encoding
         self.btn_vieneu_clone_now = ctk.CTkButton(
             self.vieneu_custom_frame,
-            text="CREATE AUDIO VỚI GIỌNG ĐÃ CLONE",
+            text="🎙️ TẠO AUDIO VỚI GIỌNG ĐÃ CLONE",
             fg_color="#22c55e",
             hover_color="#16a34a",
             font=("Roboto", 12, "bold"),
@@ -3869,7 +3868,7 @@ class StudioGUI(ctk.CTk):
         input_frame = ctk.CTkFrame(right_frame, fg_color="#0d1117")
         input_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
-        ctk.CTkLabel(input_frame, text="TEXT INPUT", font=("Roboto", 14, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(15, 5))
+        ctk.CTkLabel(input_frame, text="📝 NHẬP VĂN BẢN CẦN ĐỌC", font=("Roboto", 14, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(15, 5))
         
         self.vieneu_text_input = ctk.CTkTextbox(input_frame, height=120, font=("Roboto", 12))
         self.vieneu_text_input.pack(fill="x", padx=15, pady=5)
@@ -3889,7 +3888,7 @@ class StudioGUI(ctk.CTk):
 
         self.btn_vieneu_generate = ctk.CTkButton(
             btn_frame, 
-            text="CREATE AUDIO", 
+            text="🎙️ TẠO AUDIO", 
             fg_color="#22c55e", 
             hover_color="#16a34a",
             font=("Roboto", 12, "bold"), 
@@ -3900,7 +3899,7 @@ class StudioGUI(ctk.CTk):
 
         self.btn_vieneu_play = ctk.CTkButton(
             btn_frame, 
-            text="PLAY", 
+            text="▶ PHÁT", 
             fg_color="#3b82f6", 
             state="disabled", 
             command=self._vieneu_play
@@ -3909,7 +3908,7 @@ class StudioGUI(ctk.CTk):
 
         self.btn_vieneu_stop = ctk.CTkButton(
             btn_frame, 
-            text="STOP", 
+            text="⏹ DỪNG", 
             fg_color="#ef4444", 
             command=self._vieneu_stop_playback
         )
@@ -3917,7 +3916,7 @@ class StudioGUI(ctk.CTk):
 
         self.btn_vieneu_save = ctk.CTkButton(
             btn_frame, 
-            text="SAVE FILE", 
+            text="💾 LƯU FILE", 
             fg_color="#6366f1", 
             state="disabled", 
             command=self._vieneu_save
@@ -3928,7 +3927,7 @@ class StudioGUI(ctk.CTk):
         self.vieneu_streaming_var = ctk.BooleanVar(value=False)
         self.vieneu_streaming_cb = ctk.CTkCheckBox(
             btn_frame, 
-            text="Streaming (GPU)", 
+            text="⚡ Streaming (GPU)", 
             variable=self.vieneu_streaming_var,
             font=("Roboto", 10),
             state="disabled"  # Will be enabled when GPU model is loaded
@@ -3942,7 +3941,7 @@ class StudioGUI(ctk.CTk):
         file_frame = ctk.CTkFrame(right_frame, fg_color="#0d1117")
         file_frame.grid(row=1, column=0, sticky="nsew", pady=5)
 
-        ctk.CTkLabel(file_frame, text="BATCH PROCESSING", font=("Roboto", 14, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(15, 5))
+        ctk.CTkLabel(file_frame, text="📁 XỬ LÝ FILE HÀNG LOẠT", font=("Roboto", 14, "bold"), text_color="#818cf8").pack(anchor="w", padx=15, pady=(15, 5))
 
         # File selection
         file_row = ctk.CTkFrame(file_frame, fg_color="transparent")
@@ -3951,8 +3950,8 @@ class StudioGUI(ctk.CTk):
         self.vieneu_file_entry = ctk.CTkEntry(file_row, placeholder_text="Chọn file SRT/TXT/DOCX...")
         self.vieneu_file_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
-        ctk.CTkButton(file_row, text="... Chọn file", width=100, command=self._vieneu_browse_file).pack(side="left", padx=2)
-        ctk.CTkButton(file_row, text="Folder", width=100, command=self._vieneu_browse_folder).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📂 Chọn file", width=100, command=self._vieneu_browse_file).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📁 Thư mục", width=100, command=self._vieneu_browse_folder).pack(side="left", padx=2)
 
         # Output folder
         out_row = ctk.CTkFrame(file_frame, fg_color="transparent")
@@ -3962,7 +3961,7 @@ class StudioGUI(ctk.CTk):
         self.vieneu_output_entry.insert(0, "./vieneu_output")
         self.vieneu_output_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        ctk.CTkButton(out_row, text="Browse", width=100, command=self._vieneu_browse_output).pack(side="left")
+        ctk.CTkButton(out_row, text="📁 Chọn", width=100, command=self._vieneu_browse_output).pack(side="left")
 
         # Options
         opt_row = ctk.CTkFrame(file_frame, fg_color="transparent")
@@ -3980,7 +3979,7 @@ class StudioGUI(ctk.CTk):
 
         self.btn_vieneu_process = ctk.CTkButton(
             proc_btn_row, 
-            text="XỬ LÝ FILE", 
+            text="🚀 XỬ LÝ FILE", 
             fg_color="#6366f1", 
             hover_color="#4f46e5",
             font=("Roboto", 12, "bold"), 
@@ -3992,7 +3991,7 @@ class StudioGUI(ctk.CTk):
 
         self.btn_vieneu_stop_process = ctk.CTkButton(
             proc_btn_row, 
-            text="STOP", 
+            text="⏹ DỪNG", 
             fg_color="#64748b", 
             state="disabled",
             command=self._vieneu_stop_processing
@@ -4407,7 +4406,7 @@ class StudioGUI(ctk.CTk):
                 self.after(0, lambda: self._vieneu_log("✅ Đã mã hóa giọng mẫu thành công!"))
                 self.after(0, lambda: self._vieneu_log("📌 Bước tiếp: Nhập văn bản → Bấm 'TẠO AUDIO VỚI GIỌNG ĐÃ CLONE'"))
                 self.after(0, lambda: self._vieneu_log("💾 Hoặc bấm 'LƯU GIỌNG' để sử dụng lại lần sau"))
-                self.after(0, lambda: self.vieneu_custom_status.configure(text="Sẵn sàng! Nhập văn bản và bấm nút bên dưới để tạo audio", text_color="#22c55e"))
+                self.after(0, lambda: self.vieneu_custom_status.configure(text="✅ Sẵn sàng! Nhập văn bản và bấm nút bên dưới để tạo audio", text_color="#22c55e"))
                 # Enable the clone button, save button and show instructions
                 self.after(0, lambda: self.btn_vieneu_clone_now.configure(state="normal"))
                 self.after(0, lambda: self.btn_vieneu_save_voice.configure(state="normal"))
@@ -5022,7 +5021,7 @@ class StudioGUI(ctk.CTk):
         input_frame = ctk.CTkFrame(right_frame, fg_color="#1a1a2e")
         input_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
-        ctk.CTkLabel(input_frame, text="NHẬP VĂN BẢN KỊCH BẢN", font=("Roboto", 14, "bold"), text_color="#a78bfa").pack(anchor="w", padx=15, pady=(15, 5))
+        ctk.CTkLabel(input_frame, text="📝 NHẬP VĂN BẢN KỊCH BẢN", font=("Roboto", 14, "bold"), text_color="#a78bfa").pack(anchor="w", padx=15, pady=(15, 5))
         ctk.CTkLabel(input_frame, text="Mỗi dòng văn bản sẽ tạo thành 1 file voice riêng biệt", font=("Roboto", 11), text_color="gray").pack(anchor="w", padx=15)
 
         # Text input area
@@ -5037,8 +5036,8 @@ class StudioGUI(ctk.CTk):
         self.script_file_entry = ctk.CTkEntry(file_row, placeholder_text="Hoặc chọn file txt/docx hoặc thư mục...", width=300)
         self.script_file_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
-        ctk.CTkButton(file_row, text="... File", width=60, command=self._script_browse_file).pack(side="left", padx=2)
-        ctk.CTkButton(file_row, text="Folder", width=80, command=self._script_browse_folder).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📂 File", width=60, command=self._script_browse_file).pack(side="left", padx=2)
+        ctk.CTkButton(file_row, text="📁 Thư mục", width=80, command=self._script_browse_folder).pack(side="left", padx=2)
 
         # Output folder
         out_row = ctk.CTkFrame(input_frame, fg_color="transparent")
@@ -5048,14 +5047,14 @@ class StudioGUI(ctk.CTk):
         self.script_output_entry.insert(0, "./script_output")
         self.script_output_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
-        ctk.CTkButton(out_row, text="Browse", width=100, command=self._script_browse_output).pack(side="left")
+        ctk.CTkButton(out_row, text="📁 Chọn", width=100, command=self._script_browse_output).pack(side="left")
 
         # Process buttons
         proc_btn_row = ctk.CTkFrame(input_frame, fg_color="transparent")
         proc_btn_row.pack(fill="x", padx=15, pady=10)
 
         self.btn_script_process = ctk.CTkButton(
-            proc_btn_row, text="TẠO VOICE TỪ KỊCH BẢN", 
+            proc_btn_row, text="🚀 TẠO VOICE TỪ KỊCH BẢN", 
             fg_color="#7c3aed", hover_color="#6d28d9",
             font=("Roboto", 12, "bold"), height=40,
             command=self._script_process
@@ -5063,7 +5062,7 @@ class StudioGUI(ctk.CTk):
         self.btn_script_process.pack(side="left", padx=5)
 
         self.btn_script_stop = ctk.CTkButton(
-            proc_btn_row, text="STOP", 
+            proc_btn_row, text="⏹ DỪNG", 
             fg_color="#64748b", state="disabled",
             command=self._script_stop
         )
@@ -5096,7 +5095,7 @@ class StudioGUI(ctk.CTk):
         
         ctk.CTkButton(header_preview, text="🔄 Làm mới", width=80, height=28, 
                      command=self._script_refresh_preview).pack(side="right", padx=5, pady=5)
-        ctk.CTkButton(header_preview, text="Dừng phát", width=80, height=28, fg_color="#dc2626",
+        ctk.CTkButton(header_preview, text="⏹ Dừng phát", width=80, height=28, fg_color="#dc2626",
                      command=self.player.stop).pack(side="right", padx=5, pady=5)
 
         self.script_preview_list = ctk.CTkScrollableFrame(preview_frame, fg_color="#1f2937", height=150)
@@ -6267,7 +6266,7 @@ class StudioGUI(ctk.CTk):
             ).pack(side="right", padx=5, pady=5)
         
         # Stop button
-        ctk.CTkButton(preview_win, text="Dừng phát", fg_color="#dc2626", 
+        ctk.CTkButton(preview_win, text="⏹ Dừng phát", fg_color="#dc2626", 
                      command=self.player.stop).pack(pady=10)
 
     def _capcut_process_srt(self):
@@ -6955,7 +6954,7 @@ class StudioGUI(ctk.CTk):
             ).pack(side="right", padx=5, pady=5)
         
         # Stop button
-        ctk.CTkButton(preview_win, text="Dừng phát", fg_color="#dc2626", 
+        ctk.CTkButton(preview_win, text="⏹ Dừng phát", fg_color="#dc2626", 
                      command=self.player.stop).pack(pady=10)
 
     def _edge_process_srt(self):

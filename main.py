@@ -2518,7 +2518,7 @@ class StudioGUI(ctk.CTk):
         self._init_settings_vars()
         self._load_settings()
 
-        # Tab labels for the studio shell (used by navigation + tabview)
+        # Tab labels for the studio shell (used by navigation + content stack)
         self.tab_labels = {
             "gemini": "🎛 Gemini Studio",
             "longtext": "📜 Long Text",
@@ -2529,6 +2529,10 @@ class StudioGUI(ctk.CTk):
             "script": "🧾 Kịch Bản",
             "settings": "⚙️ Settings",
         }
+        # Sidebar navigation buttons keyed by tab id
+        self.nav_buttons: Dict[str, ctk.CTkButton] = {}
+        # Currently active tab key for styling
+        self.active_tab_key: Optional[str] = None
 
         # UI Setup
         self._setup_ui()
@@ -2604,7 +2608,6 @@ class StudioGUI(ctk.CTk):
         nav.grid(row=0, column=0, sticky="ns", padx=(0, 12), pady=4)
         nav.grid_columnconfigure(0, weight=1)
 
-        self.nav_buttons: Dict[str, ctk.CTkButton] = {}
         nav_items = [
             ("gemini", "🎛 Studio", "Gemini TTS"),
             ("longtext", "📜 Long Text", "Batch engine"),
@@ -2636,30 +2639,26 @@ class StudioGUI(ctk.CTk):
         content.grid_columnconfigure(0, weight=1)
         content.grid_rowconfigure(0, weight=1)
 
-        self.tabview = ctk.CTkTabview(
-            content,
-            width=1380,
-            height=880,
-            corner_radius=14,
-            fg_color="#0f172a",
-        )
-        self.tabview.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+        self.content_frames: Dict[str, ctk.CTkFrame] = {}
+        frame_kwargs = {"fg_color": "#0f172a", "corner_radius": 12}
+        for key in self.tab_labels.keys():
+            frame = ctk.CTkFrame(content, **frame_kwargs)
+            frame.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+            frame.grid_remove()
+            self.content_frames[key] = frame
 
-        # Hide default segmented tab header to keep studio-style navigation
-        try:
-            self.tabview._segmented_button.grid_forget()
-        except Exception:
-            pass
-
-        # Create Tabs using new labels
-        self.tab_dashboard = self.tabview.add(self.tab_labels["gemini"])
-        self.tab_longtext = self.tabview.add(self.tab_labels["longtext"])
-        self.tab_multivoice = self.tabview.add(self.tab_labels["multivoice"])
-        self.tab_capcut = self.tabview.add(self.tab_labels["capcut"])
-        self.tab_edge = self.tabview.add(self.tab_labels["edge"])
-        self.tab_vieneu = self.tabview.add(self.tab_labels["vieneu"])
-        self.tab_script = self.tabview.add(self.tab_labels["script"])
-        self.tab_settings = self.tabview.add(self.tab_labels["settings"])
+        alias_map = {
+            "gemini": "tab_dashboard",
+            "longtext": "tab_longtext",
+            "multivoice": "tab_multivoice",
+            "capcut": "tab_capcut",
+            "edge": "tab_edge",
+            "vieneu": "tab_vieneu",
+            "script": "tab_script",
+            "settings": "tab_settings",
+        }
+        for key, attr in alias_map.items():
+            setattr(self, attr, self.content_frames[key])
 
         # Setup Content
         self._setup_settings_tab()
@@ -2709,19 +2708,18 @@ class StudioGUI(ctk.CTk):
 
     def _switch_to_tab(self, key: str):
         """Navigate to a tab using the studio sidebar and keep nav state in sync"""
-        label = self.tab_labels.get(key)
-        if not label:
+        frame = self.content_frames.get(key)
+        if frame is None:
+            self.log(f"Navigation key '{key}' is not registered", "WARNING")
             return
-        try:
-            self.tabview.set(label)
-        except Exception:
-            pass
+        for other in self.content_frames.values():
+            other.grid_remove()
+        frame.grid()
+        frame.tkraise()
         self._highlight_nav(key)
 
     def _highlight_nav(self, active_key: str):
         """Update sidebar button states to reflect the active tab"""
-        if not hasattr(self, "nav_buttons"):
-            return
         for key, btn in self.nav_buttons.items():
             is_active = key == active_key
             btn.configure(

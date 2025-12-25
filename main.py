@@ -426,6 +426,10 @@ def sanitize_error_message(msg: str) -> str:
     msg = re.sub(r"\bgithub(?:\.com|\.io)/\S+", "[đã ẩn]", msg, flags=re.IGNORECASE)
     return msg.replace("VieNeu-TTS", "VN TTS")
 
+PROGRESS_PERCENT_RE = re.compile(
+    r"(?<!\d)(100(?:\.0+)?|[0-9]{1,2}(?:\.\d+)?)%"
+)
+
 
 class ProgressRedirector(io.StringIO):
     """
@@ -441,7 +445,7 @@ class ProgressRedirector(io.StringIO):
             return 0
         text = s.replace("\r", "\n")
         for segment in text.split("\n"):
-            match = re.search(r"(?<!\d)(100(?:\.0+)?|[0-9]{1,2}(?:\.\d+)?)%", segment)
+            match = PROGRESS_PERCENT_RE.search(segment)
             if match:
                 try:
                     pct = float(match.group(1))
@@ -4067,8 +4071,7 @@ class StudioGUI(ctk.CTk):
         """Add message to VN TTS log"""
         msg = sanitize_error_message(msg)
         if getattr(self, "vieneu_hide_non_progress", False):
-            # Trong giai đoạn tải model, chỉ hiện thông tin tiến trình
-            if "%" not in msg and "Hoàn" not in msg and "xong" not in msg:
+            if "%" not in msg:
                 return
         self.vieneu_log.configure(state="normal")
         self.vieneu_log.insert("end", f"[{time.strftime('%H:%M:%S')}] {msg}\n")
@@ -4244,97 +4247,94 @@ class StudioGUI(ctk.CTk):
             progress_stream = ProgressRedirector(self._vieneu_progress_update)
             max_err_len = ERROR_MSG_MAX_LENGTH
             try:
-                with redirect_stdout(progress_stream), redirect_stderr(progress_stream):
-                    backbone_name = self.vieneu_backbone_var.get()
-                    codec_name = self.vieneu_codec_var.get()
-                    device = self.vieneu_device_var.get()
-                    enable_triton = self.vieneu_triton_var.get()
-                    try:
-                        max_batch = int(self.vieneu_batch_var.get() or "8")
-                    except ValueError:
-                        max_batch = 8
-                    
-                    backbone_config = VIENEU_BACKBONE_CONFIGS.get(backbone_name, {})
-                    codec_config = VIENEU_CODEC_CONFIGS.get(codec_name, {})
-                    
-                    backbone_repo = backbone_config.get("repo", "pnnbao-ump/VieNeu-TTS-q4-gguf")
-                    codec_repo = codec_config.get("repo", "neuphonic/neucodec")
-                    
-                    memory_util = self.vieneu_memory_slider.get()
-                    enable_prefix_caching = backbone_config.get("enable_prefix_caching", True)
-                    quant_policy = backbone_config.get("quant_policy", 0)
-                    
-                    vieneu_path = VIENEU_TTS_DIR
-                    if vieneu_path not in sys.path:
-                        sys.path.insert(0, vieneu_path)
-                    
-                    import torch
-                    
-                    torch_version = getattr(torch, '__version__', 'Unknown')
-                    torch_cuda_version = getattr(torch.version, 'cuda', None) or "Không có CUDA"
-                    
-                    if hasattr(torch.cuda, 'is_built'):
-                        torch_cuda_built = torch.cuda.is_built()
+                backbone_name = self.vieneu_backbone_var.get()
+                codec_name = self.vieneu_codec_var.get()
+                device = self.vieneu_device_var.get()
+                enable_triton = self.vieneu_triton_var.get()
+                try:
+                    max_batch = int(self.vieneu_batch_var.get() or "8")
+                except ValueError:
+                    max_batch = 8
+                
+                backbone_config = VIENEU_BACKBONE_CONFIGS.get(backbone_name, {})
+                codec_config = VIENEU_CODEC_CONFIGS.get(codec_name, {})
+                
+                backbone_repo = backbone_config.get("repo", "pnnbao-ump/VieNeu-TTS-q4-gguf")
+                codec_repo = codec_config.get("repo", "neuphonic/neucodec")
+                
+                memory_util = self.vieneu_memory_slider.get()
+                enable_prefix_caching = backbone_config.get("enable_prefix_caching", True)
+                quant_policy = backbone_config.get("quant_policy", 0)
+                
+                vieneu_path = VIENEU_TTS_DIR
+                if vieneu_path not in sys.path:
+                    sys.path.insert(0, vieneu_path)
+                
+                import torch
+                
+                if hasattr(torch.cuda, 'is_built'):
+                    torch_cuda_built = torch.cuda.is_built()
+                else:
+                    torch_cuda_built = bool(getattr(torch.version, 'cuda', None))
+                
+                cuda_visible = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+                if cuda_visible is not None:
+                    cuda_visible_stripped = cuda_visible.strip()
+                    if cuda_visible_stripped == '' or cuda_visible_stripped == '-1':
+                        self.after(0, lambda val=cuda_visible: self._vieneu_log(f"⚠️ CUDA_VISIBLE_DEVICES='{val}' - CUDA bị vô hiệu hóa"))
+                
+                if not torch_cuda_built:
+                    has_cuda = False
+                else:
+                    has_cuda = torch.cuda.is_available()
+                
+                if has_cuda:
+                    device_count = torch.cuda.device_count()
+                    cuda_device_name = torch.cuda.get_device_name(0) if device_count > 0 else "Không rõ"
+                    self.after(0, lambda name=cuda_device_name, cnt=device_count: self._vieneu_log(f"✅ Phát hiện {cnt} GPU: {name}"))
+                else:
+                    if torch_cuda_built:
+                        self.after(0, lambda: self._vieneu_log("⚠️ PyTorch có CUDA nhưng không thấy GPU."))
                     else:
-                        torch_cuda_built = bool(getattr(torch.version, 'cuda', None))
-                    
-                    cuda_visible = os.environ.get('CUDA_VISIBLE_DEVICES', None)
-                    if cuda_visible is not None:
-                        cuda_visible_stripped = cuda_visible.strip()
-                        if cuda_visible_stripped == '' or cuda_visible_stripped == '-1':
-                            self.after(0, lambda val=cuda_visible: self._vieneu_log(f"⚠️ CUDA_VISIBLE_DEVICES='{val}' - CUDA bị vô hiệu hóa"))
-                    
-                    if not torch_cuda_built:
-                        has_cuda = False
-                    else:
-                        has_cuda = torch.cuda.is_available()
-                    
+                        self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
+                
+                if device == "Auto":
                     if has_cuda:
-                        device_count = torch.cuda.device_count()
-                        cuda_device_name = torch.cuda.get_device_name(0) if device_count > 0 else "Không rõ"
-                        self.after(0, lambda name=cuda_device_name, cnt=device_count: self._vieneu_log(f"✅ Phát hiện {cnt} GPU: {name}"))
+                        if "gguf" in backbone_name.lower():
+                            backbone_device = "gpu"
+                        else:
+                            backbone_device = "cuda"
+                        codec_device = "cuda"
                     else:
-                        if torch_cuda_built:
-                            self.after(0, lambda: self._vieneu_log("⚠️ PyTorch có CUDA nhưng không thấy GPU."))
-                        else:
-                            self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
-                    
-                    if device == "Auto":
-                        if has_cuda:
-                            if "gguf" in backbone_name.lower():
-                                backbone_device = "gpu"
-                            else:
-                                backbone_device = "cuda"
-                            codec_device = "cuda"
-                        else:
-                            backbone_device = "cpu"
-                            codec_device = "cpu"
-                    elif device == "CPU":
                         backbone_device = "cpu"
                         codec_device = "cpu"
-                    else:
-                        if has_cuda:
-                            if "gguf" in backbone_name.lower():
-                                backbone_device = "gpu"
-                            else:
-                                backbone_device = "cuda"
-                            codec_device = "cuda"
+                elif device == "CPU":
+                    backbone_device = "cpu"
+                    codec_device = "cpu"
+                else:
+                    if has_cuda:
+                        if "gguf" in backbone_name.lower():
+                            backbone_device = "gpu"
                         else:
-                            self.after(0, lambda: self._vieneu_log("⚠️ GPU không khả dụng, chuyển sang CPU"))
-                            backbone_device = "cpu"
-                            codec_device = "cpu"
-                    
-                    if "onnx" in codec_repo.lower():
+                            backbone_device = "cuda"
+                        codec_device = "cuda"
+                    else:
+                        self.after(0, lambda: self._vieneu_log("⚠️ GPU không khả dụng, chuyển sang CPU"))
+                        backbone_device = "cpu"
                         codec_device = "cpu"
-                    
-                    use_fast = (
-                        has_cuda and 
-                        device != "CPU" and 
-                        "gguf" not in backbone_name.lower()
-                    )
-                    
-                    from vieneu_tts import VieNeuTTS, FastVieNeuTTS
-                    
+                
+                if "onnx" in codec_repo.lower():
+                    codec_device = "cpu"
+                
+                use_fast = (
+                    has_cuda and 
+                    device != "CPU" and 
+                    "gguf" not in backbone_name.lower()
+                )
+                
+                from vieneu_tts import VieNeuTTS, FastVieNeuTTS
+                
+                with redirect_stdout(progress_stream), redirect_stderr(progress_stream):
                     if use_fast:
                         try:
                             self.vieneu_tts_instance = FastVieNeuTTS(

@@ -726,6 +726,28 @@ uv run gradio_app.py
 
 ---
 
+## 10. Build EXE với PyInstaller/Nuitka
+
+Nếu bạn muốn đóng gói ứng dụng thành file .exe để phân phối, vui lòng tham khảo tài liệu **[BUILD_GUIDE.md](BUILD_GUIDE.md)** để biết hướng dẫn chi tiết về:
+
+- Cách build llama-cpp-python cho CPU
+- Cấu hình PyInstaller spec file
+- Cấu trúc thư mục output
+- Script build tự động
+- Khắc phục sự cố khi build
+
+### Quick Start Build:
+
+```bash
+# Windows - Chạy script build tự động
+build.bat
+
+# Hoặc build thủ công
+pyinstaller main_fath.spec --clean
+```
+
+---
+
 **Được tạo bởi:** Fath TTS Team  
 **Ngày cập nhật:** Tháng 12, 2025  
-**Phiên bản:** 1.0
+**Phiên bản:** 1.1

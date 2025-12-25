@@ -20,6 +20,8 @@ import base64
 import shutil
 import sys
 import concurrent.futures
+import io
+from contextlib import redirect_stdout, redirect_stderr
 from urllib.parse import quote
 
 # Add edge module path
@@ -32,7 +34,7 @@ from auth_module import AuthManager, require_login
 
 # Cấu hình giao diện CustomTkinter
 ctk.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
-ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+ctk.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 try:
     import pyaudio
@@ -405,6 +407,53 @@ MIN_AUDIO_FILE_SIZE = 100  # Minimum bytes for a valid audio file
 
 # Error message display
 ERROR_MSG_MAX_LENGTH = 50  # Maximum characters to display in error messages
+
+
+# =============================================================================
+# LOG SANITIZATION & PROGRESS PARSING
+# =============================================================================
+
+def sanitize_error_message(msg: str) -> str:
+    """
+    Ẩn các đường dẫn hoặc thông tin nhạy cảm trong log lỗi.
+    - Xóa URL (http/https)
+    - Đổi nhãn VieNeu-TTS thành VN TTS trong thông báo
+    """
+    if not msg:
+        return ""
+    msg = re.sub(r"https?://\S+", "[đã ẩn]", msg)
+    # Ẩn các tham chiếu github không có http/https ở đầu
+    msg = re.sub(r"\bgithub(?:\.com|\.io)/\S+", r"[đã ẩn]", msg, flags=re.IGNORECASE)
+    return msg.replace("VieNeu-TTS", "VN TTS")
+
+# Khớp giá trị phần trăm hợp lệ (0-100, cho phép số lẻ) và tránh match bên trong chuỗi dài
+PROGRESS_PERCENT_RE = re.compile(
+    r"(?<!\d)(100(?:\.0+)?|[0-9]{1,2}(?:\.\d+)?)(%(?!\d))"
+)
+
+
+class ProgressRedirector(io.StringIO):
+    """
+    Bộ thu stdout/stderr để bắt phần trăm tiến trình tải model.
+    Chỉ chuyển tiếp các đoạn chứa ký tự % cho callback.
+    """
+    def __init__(self, on_progress):
+        super().__init__()
+        self.on_progress = on_progress
+
+    def write(self, s):
+        if not s:
+            return 0
+        text = s.replace("\r\n", "\n").replace("\r", "\n")
+        for segment in text.split("\n"):
+            match = PROGRESS_PERCENT_RE.search(segment)
+            if match:
+                try:
+                    pct = float(match.group(1))
+                    self.on_progress(pct)
+                except (ValueError, TypeError):
+                    pass
+        return len(s)
 
 
 # =============================================================================
@@ -2471,7 +2520,7 @@ class StudioGUI(ctk.CTk):
         super().__init__()
 
         # Window Setup
-        self.title("AIOLuancher TTS")
+        self.title("VN TTS Studio")
         
         # FIX: Set window size and center it properly to prevent jumping/lag
         window_width = 1400
@@ -2506,6 +2555,8 @@ class StudioGUI(ctk.CTk):
         self.is_playing_all = False
         self.current_play_index = 0
         self.lt_selected_files: List[str] = []
+        self.vieneu_hide_non_progress = False
+        self.vieneu_last_progress = -1
         
         # Flag to stop consumers on close
         self._is_closing = False
@@ -4019,6 +4070,10 @@ class StudioGUI(ctk.CTk):
     # ==========================================================================
     def _vieneu_log(self, msg):
         """Add message to VN TTS log"""
+        msg = sanitize_error_message(msg)
+        if getattr(self, "vieneu_hide_non_progress", False):
+            if "%" not in msg:
+                return
         self.vieneu_log.configure(state="normal")
         self.vieneu_log.insert("end", f"[{time.strftime('%H:%M:%S')}] {msg}\n")
         self.vieneu_log.see("end")
@@ -4078,6 +4133,19 @@ class StudioGUI(ctk.CTk):
                 font=("Roboto", 10)
             )
             rb.pack(anchor="w", pady=2, padx=5)
+
+    def _vieneu_progress_update(self, percent):
+        """Hiển thị tiến trình tải model (%) trên log và status."""
+        try:
+            pct = int(round(float(percent)))
+        except (ValueError, TypeError):
+            return
+        pct = max(0, min(100, pct))
+        if pct == self.vieneu_last_progress:
+            return
+        self.vieneu_last_progress = pct
+        self.after(0, lambda p=pct: self._vieneu_log(f"⏳ Đang tải: {p}%"))
+        self.after(0, lambda p=pct: self.vieneu_model_status.configure(text=f"Đang tải {p}%", text_color="#fbbf24"))
 
     def _vieneu_update_char_count(self, event=None):
         """Update character count for VN TTS text input"""
@@ -4170,11 +4238,15 @@ class StudioGUI(ctk.CTk):
 
     def _vieneu_load_model(self):
         """Load VN TTS model"""
-        self._vieneu_log("⏳ Đang tải model... Vui lòng chờ...")
+        self.vieneu_hide_non_progress = True
+        self.vieneu_last_progress = -1
+        self._vieneu_progress_update(0)
         self.btn_vieneu_load.configure(state="disabled")
         self.vieneu_model_status.configure(text="⏳ Đang tải model...", text_color="#fbbf24")
         
         def load_thread():
+            progress_stream = ProgressRedirector(self._vieneu_progress_update)
+            max_err_len = globals().get("ERROR_MSG_MAX_LENGTH", 50)
             try:
                 backbone_name = self.vieneu_backbone_var.get()
                 codec_name = self.vieneu_codec_var.get()
@@ -4191,68 +4263,42 @@ class StudioGUI(ctk.CTk):
                 backbone_repo = backbone_config.get("repo", "pnnbao-ump/VieNeu-TTS-q4-gguf")
                 codec_repo = codec_config.get("repo", "neuphonic/neucodec")
                 
-                # Get GPU optimization settings from UI slider (initialized in _setup_vieneu_tab)
                 memory_util = self.vieneu_memory_slider.get()
                 enable_prefix_caching = backbone_config.get("enable_prefix_caching", True)
                 quant_policy = backbone_config.get("quant_policy", 0)
                 
-                # User-friendly log messages
-                self.after(0, lambda: self._vieneu_log(f"🔧 Đang tải model TTS tiếng Việt..."))
-                self.after(0, lambda: self._vieneu_log(f"📦 Phiên bản: {backbone_name}"))
-                self.after(0, lambda: self._vieneu_log(f"🖥️ Thiết bị: {device}"))
-                
-                # Add VN TTS to path
                 vieneu_path = VIENEU_TTS_DIR
                 if vieneu_path not in sys.path:
                     sys.path.insert(0, vieneu_path)
                 
-                # Determine actual device - Fix GPU detection
-                # Import torch and check CUDA availability with detailed debugging
                 import torch
                 
-                # Debug: Log PyTorch build info with safe defaults
-                torch_version = getattr(torch, '__version__', 'Unknown')
-                torch_cuda_version = getattr(torch.version, 'cuda', None) or "Không có CUDA"
-                
-                # Check if PyTorch was built with CUDA support
-                # Use torch.cuda.is_built() if available, otherwise check torch.version.cuda
                 if hasattr(torch.cuda, 'is_built'):
                     torch_cuda_built = torch.cuda.is_built()
                 else:
-                    # Fallback: check if CUDA version string exists and is not empty
                     torch_cuda_built = bool(getattr(torch.version, 'cuda', None))
                 
-                self.after(0, lambda v=torch_version, c=torch_cuda_version: self._vieneu_log(f"🔧 PyTorch: {v}, CUDA: {c}"))
-                
-                # Check CUDA_VISIBLE_DEVICES environment variable
-                # Both empty string and "-1" disable CUDA
                 cuda_visible = os.environ.get('CUDA_VISIBLE_DEVICES', None)
                 if cuda_visible is not None:
                     cuda_visible_stripped = cuda_visible.strip()
                     if cuda_visible_stripped == '' or cuda_visible_stripped == '-1':
                         self.after(0, lambda val=cuda_visible: self._vieneu_log(f"⚠️ CUDA_VISIBLE_DEVICES='{val}' - CUDA bị vô hiệu hóa"))
                 
-                # Determine if PyTorch was built with CUDA support and check GPU availability
                 if not torch_cuda_built:
-                    self.after(0, lambda: self._vieneu_log("❌ PyTorch không có CUDA! Cài lại PyTorch phiên bản GPU."))
                     has_cuda = False
                 else:
-                    # PyTorch has CUDA support, now check if GPU is actually available
                     has_cuda = torch.cuda.is_available()
                 
-                # Log CUDA status for debugging
                 if has_cuda:
                     device_count = torch.cuda.device_count()
                     cuda_device_name = torch.cuda.get_device_name(0) if device_count > 0 else "Không rõ"
                     self.after(0, lambda name=cuda_device_name, cnt=device_count: self._vieneu_log(f"✅ Phát hiện {cnt} GPU: {name}"))
                 else:
-                    # Provide more detailed error message
                     if torch_cuda_built:
-                        self.after(0, lambda: self._vieneu_log("⚠️ PyTorch có CUDA nhưng không thấy GPU. Kiểm tra driver NVIDIA."))
+                        self.after(0, lambda: self._vieneu_log("⚠️ PyTorch có CUDA nhưng không thấy GPU."))
                     else:
                         self.after(0, lambda: self._vieneu_log("⚠️ Không phát hiện GPU CUDA, sử dụng CPU"))
                 
-                # Determine device based on selection and CUDA availability
                 if device == "Auto":
                     if has_cuda:
                         if "gguf" in backbone_name.lower():
@@ -4266,7 +4312,7 @@ class StudioGUI(ctk.CTk):
                 elif device == "CPU":
                     backbone_device = "cpu"
                     codec_device = "cpu"
-                else:  # CUDA (GPU) selected
+                else:
                     if has_cuda:
                         if "gguf" in backbone_name.lower():
                             backbone_device = "gpu"
@@ -4278,43 +4324,42 @@ class StudioGUI(ctk.CTk):
                         backbone_device = "cpu"
                         codec_device = "cpu"
                 
-                # ONNX codec only runs on CPU
                 if "onnx" in codec_repo.lower():
                     codec_device = "cpu"
                 
-                device_display = backbone_device.upper()
-                self.after(0, lambda d=device_display: self._vieneu_log(f"🎯 Sử dụng thiết bị: {d}"))
-                
-                # Check if we should use FastVieNeuTTS (LMDeploy)
                 use_fast = (
                     has_cuda and 
                     device != "CPU" and 
                     "gguf" not in backbone_name.lower()
                 )
                 
-                # Import and create TTS instance
                 from vieneu_tts import VieNeuTTS, FastVieNeuTTS
                 
-                if use_fast:
-                    self.after(0, lambda: self._vieneu_log("🚀 Đang tải GPU tối ưu hóa..."))
-                    self.after(0, lambda m=memory_util: self._vieneu_log(f"   ⚡ GPU Memory: {int(m*100)}%"))
-                    try:
-                        self.vieneu_tts_instance = FastVieNeuTTS(
-                            backbone_repo=backbone_repo,
-                            backbone_device=backbone_device,
-                            codec_repo=codec_repo,
-                            codec_device=codec_device,
-                            memory_util=memory_util,
-                            tp=1,
-                            enable_prefix_caching=enable_prefix_caching,
-                            quant_policy=quant_policy,
-                            enable_triton=enable_triton,
-                            max_batch_size=max_batch,
-                        )
-                        self.vieneu_using_fast = True
-                    except Exception as e:
-                        self.after(0, lambda err=str(e): self._vieneu_log(f"⚠️ LMDeploy không khả dụng: {err}"))
-                        self.after(0, lambda: self._vieneu_log("📦 Chuyển sang backend chuẩn..."))
+                with redirect_stdout(progress_stream), redirect_stderr(progress_stream):
+                    if use_fast:
+                        try:
+                            self.vieneu_tts_instance = FastVieNeuTTS(
+                                backbone_repo=backbone_repo,
+                                backbone_device=backbone_device,
+                                codec_repo=codec_repo,
+                                codec_device=codec_device,
+                                memory_util=memory_util,
+                                tp=1,
+                                enable_prefix_caching=enable_prefix_caching,
+                                quant_policy=quant_policy,
+                                enable_triton=enable_triton,
+                                max_batch_size=max_batch,
+                            )
+                            self.vieneu_using_fast = True
+                        except Exception:
+                            self.vieneu_tts_instance = VieNeuTTS(
+                                backbone_repo=backbone_repo,
+                                backbone_device=backbone_device,
+                                codec_repo=codec_repo,
+                                codec_device=codec_device
+                            )
+                            self.vieneu_using_fast = False
+                    else:
                         self.vieneu_tts_instance = VieNeuTTS(
                             backbone_repo=backbone_repo,
                             backbone_device=backbone_device,
@@ -4322,29 +4367,19 @@ class StudioGUI(ctk.CTk):
                             codec_device=codec_device
                         )
                         self.vieneu_using_fast = False
-                else:
-                    self.after(0, lambda: self._vieneu_log("📦 Sử dụng backend chuẩn"))
-                    self.vieneu_tts_instance = VieNeuTTS(
-                        backbone_repo=backbone_repo,
-                        backbone_device=backbone_device,
-                        codec_repo=codec_repo,
-                        codec_device=codec_device
-                    )
-                    self.vieneu_using_fast = False
                 
                 self.vieneu_model_loaded = True
+                self._vieneu_progress_update(100)
                 
-                # Update UI
                 backend_name = "🚀 LMDeploy" if self.vieneu_using_fast else "📦 Standard"
                 status_msg = f"✅ Model đã tải!\n{backend_name} | {backbone_device.upper()}"
                 
+                self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))
                 self.after(0, lambda: self.vieneu_model_status.configure(text=status_msg, text_color="#22c55e"))
                 self.after(0, lambda: self._vieneu_log(f"✅ Model tải thành công!"))
                 self.after(0, lambda: self.btn_vieneu_generate.configure(state="normal"))
                 self.after(0, lambda: self.btn_vieneu_process.configure(state="normal"))
                 
-                # Enable streaming checkbox if streaming is supported
-                # Streaming is supported by: FastVieNeuTTS (GPU+LMDeploy) and GGUF models
                 supports_streaming = backbone_config.get("supports_streaming", False)
                 if self.vieneu_using_fast or supports_streaming:
                     self.after(0, lambda: self.vieneu_streaming_cb.configure(state="normal"))
@@ -4354,15 +4389,18 @@ class StudioGUI(ctk.CTk):
                     self.after(0, lambda: self.vieneu_streaming_var.set(False))
                 
             except ImportError as e:
-                err_msg = str(e)
-                self.after(0, lambda: self._vieneu_log(f"❌ Thiếu thư viện: {err_msg}"))
-                self.after(0, lambda: self._vieneu_log("💡 Hãy cài đặt: pip install -r VieNeu-TTS/requirements.txt"))
-                self.after(0, lambda: self.vieneu_model_status.configure(text=f"❌ Lỗi import: {err_msg[:50]}", text_color="#ef4444"))
+                err_msg = sanitize_error_message(str(e))
+                self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))
+                self.after(0, lambda: self._vieneu_log("❌ Không thể tải model VN TTS"))
+                self.after(0, lambda: self.vieneu_model_status.configure(text="❌ Tải thất bại", text_color="#ef4444"))
+                self.after(0, lambda: self._vieneu_log(f"Chi tiết: {err_msg[:max_err_len]}"))
             except Exception as e:
-                err_msg = str(e)
-                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {err_msg}"))
-                self.after(0, lambda: self.vieneu_model_status.configure(text=f"❌ Lỗi: {err_msg[:50]}", text_color="#ef4444"))
+                err_msg = sanitize_error_message(str(e))
+                self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))
+                self.after(0, lambda: self._vieneu_log(f"❌ Lỗi: {err_msg[:max_err_len]}"))
+                self.after(0, lambda: self.vieneu_model_status.configure(text="❌ Tải thất bại", text_color="#ef4444"))
             finally:
+                self.after(0, lambda: setattr(self, "vieneu_hide_non_progress", False))
                 self.after(0, lambda: self.btn_vieneu_load.configure(state="normal"))
         
         threading.Thread(target=load_thread, daemon=True).start()

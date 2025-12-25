@@ -1,43 +1,13 @@
-from __future__ import annotations
-
 import json
 import os
 import re
 import wave
 import asyncio
 import threading
-try:
-    import tkinter as tk  # Legacy UI (giữ để tương thích)
-    from tkinter import filedialog, messagebox
-except ImportError:  # pragma: no cover - môi trường không có Tk
-    tk = None
-    filedialog = None
-    messagebox = None
-
-try:
-    import customtkinter as ctk  # Legacy UI
-except ImportError:  # pragma: no cover
-    ctk = None
-
-def _make_dummy(name):
-    class _Dummy:
-        def __getattr__(self, attr):
-            raise ImportError(f"{name} không khả dụng trong môi trường hiện tại.")
-    return _Dummy()
-
-if messagebox is None:
-    messagebox = _make_dummy("MessageBox (tkinter)")
-    filedialog = _make_dummy("FileDialog (tkinter)")
-
-if ctk is None:
-    class _DummyCTk:
-        def __init__(self, *_, **__):
-            raise ImportError("CustomTkinter không khả dụng trong môi trường hiện tại.")
-    class _DummyCTkModule:
-        CTk = _DummyCTk
-    ctk = _DummyCTkModule()
+import tkinter as tk  
+from tkinter import filedialog, messagebox
+import customtkinter as ctk 
 from pathlib import Path
-import math
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
 from queue import Queue, Empty
@@ -60,10 +30,9 @@ if _edge_module_path not in sys.path:
 # Import authentication module
 from auth_module import AuthManager, require_login
 
-# Cấu hình giao diện CustomTkinter (nếu có)
-if hasattr(ctk, "set_appearance_mode"):
-    ctk.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
-    ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+# Cấu hình giao diện CustomTkinter
+ctk.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 try:
     import pyaudio
@@ -71,12 +40,8 @@ try:
 except ImportError:
     HAS_PYAUDIO = False
 
-try:
-    from google import genai
-    from google.genai import types
-except ImportError:  # pragma: no cover - không cần cho UI web demo
-    genai = None
-    types = None
+from google import genai
+from google.genai import types
 
 
 # =============================================================================
@@ -7877,218 +7842,44 @@ def get_auth_manager() -> Optional[AuthManager]:
     return _auth_manager
 
 
-def _generate_preview_tone(text: str, voice: str, engine: str, speed: float):
-    """
-    Tạo file audio demo nhanh (tone tổng hợp) cho UI web mới.
-    Giúp người dùng xem trước trải nghiệm mà không cần gọi API nặng.
-    """
-    cleaned = clean_text_for_tts(text)
-    if not cleaned:
-        raise ValueError("Vui lòng nhập nội dung cần đọc.")
-    
-    # Tính độ dài và tần số để giả lập khác biệt giữa các voice/engine
-    MIN_DURATION = 0.8
-    MAX_DURATION = 6.0
-    BASE_CHAR_PER_SEC = 28
-    BASE_FREQ = 240
-    FREQ_RANGE = 420
-    MAX_INT16 = 32767
-    AMPLITUDE = 0.28
-
-    duration_sec = max(MIN_DURATION, min(MAX_DURATION, len(cleaned) / BASE_CHAR_PER_SEC))
-    duration_sec = duration_sec / max(speed, 0.1)
-    sample_rate = RECEIVE_SAMPLE_RATE
-    total_samples = int(sample_rate * duration_sec)
-    freq = BASE_FREQ + (abs(hash(f"{voice}-{engine}")) % FREQ_RANGE)
-    
-    frames = bytearray()
-    for i in range(total_samples):
-        angle = 2 * math.pi * freq * (i / sample_rate)
-        sample = int(MAX_INT16 * AMPLITUDE * math.sin(angle))
-        frames.extend(sample.to_bytes(2, "little", signed=True))
-    
-    out_dir = os.path.join(get_app_dir(), "tts_output", "preview")
-    os.makedirs(out_dir, exist_ok=True)
-    output_path = os.path.join(out_dir, "preview.wav")
-    save_wave_file(output_path, bytes(frames), rate=sample_rate)
-    return output_path, duration_sec
-
-
-def _build_modern_studio():
-    """
-    Xây dựng giao diện studio mới với Gradio (UI web hiện đại, gọn gàng).
-    """
-    try:
-        import gradio as gr
-    except ImportError as exc:  # pragma: no cover - chỉ chạy khi thiếu gradio
-        raise ImportError(
-            "Gradio chưa được cài đặt. Vui lòng cài với: pip install gradio"
-        ) from exc
-    
-    theme = gr.themes.Soft(primary_hue="blue", neutral_hue="slate")
-    
-    voice_options = VOICES
-    capcut_names = [v["display_name"] for v in DEFAULT_CAPCUT_VOICES]
-    edge_languages = EDGE_TTS_LANGUAGES
-    
-    def _handle_generate(text, voice, engine, speed, language, flavor):
-        try:
-            audio_path, duration = _generate_preview_tone(text, voice, engine, speed)
-            summary = f"🎧 {engine} • {voice} • {duration:.1f}s • {language}"
-            log = (
-                f"- Làm sạch {len(clean_text_for_tts(text))} ký tự\n"
-                f"- Voice: {voice}\n"
-                f"- Engine: {engine}\n"
-                f"- Speed: {speed:.2f}x | Flavor: {', '.join(flavor) if flavor else 'Mặc định'}"
-            )
-            return audio_path, summary, log
-        except Exception as e:  # pragma: no cover - UI surface
-            return None, "", f"❌ {e}"
-    
-    with gr.Blocks(theme=theme, title="VN TTS Studio") as demo:
-        gr.HTML(
-            """
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;
-                        background:linear-gradient(135deg,#0f172a,#0b1224);padding:18px 20px;
-                        border-radius:14px;color:#e2e8f0;border:1px solid #1f2937;">
-              <div>
-                <div style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#93c5fd;">
-                  Studio UI 2025 · Web Native
-                </div>
-                <div style="font-size:24px;font-weight:700;margin-top:4px;">Vocal Engineering Suite</div>
-                <div style="color:#cbd5e1;margin-top:4px;">Thiết kế tối giản, tập trung vào quy trình TTS chính.</div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:center;">
-                <div style="padding:10px 12px;border-radius:10px;background:#111827;color:#a5b4fc;
-                            border:1px solid #1f2937;font-weight:600;">Realtime Preview</div>
-                <div style="padding:10px 12px;border-radius:10px;background:#111827;color:#a5b4fc;
-                            border:1px solid #1f2937;font-weight:600;">Multi-Engine</div>
-              </div>
-            </div>
-            """
-        )
-        gr.HTML(
-            """
-            <style>
-              .card {background:#0b1224;border:1px solid #1f2937;padding:14px;border-radius:12px;color:#e2e8f0;}
-              .card strong {display:block;font-size:15px;margin-bottom:4px;}
-            </style>
-            """
-        )
-        
-        with gr.Row():
-            gr.Markdown("**Gemini voices**\n\nMinimal latency • curated list", elem_classes=["card"])
-            gr.Markdown("**CapCut studio**\n\nCác profile giọng Việt & Disney", elem_classes=["card"])
-            gr.Markdown("**Edge library**\n\nHơn 60+ ngôn ngữ sẵn sàng", elem_classes=["card"])
-        
-        with gr.Tab("Vocal Studio"):
-            with gr.Row():
-                with gr.Column(scale=3):
-                    txt_input = gr.TextArea(
-                        label="Nội dung", placeholder="Dán hoặc nhập script cần đọc...",
-                        lines=10
-                    )
-                    with gr.Row():
-                        voice_select = gr.Dropdown(
-                            choices=voice_options, value=voice_options[0],
-                            label="Voice template"
-                        )
-                        engine_select = gr.Radio(
-                            choices=["Gemini", "CapCut", "Edge"],
-                            value="Gemini",
-                            label="Engine"
-                        )
-                    with gr.Row():
-                        speed_slider = gr.Slider(0.6, 1.6, value=1.1, step=0.05, label="Tốc độ")
-                        lang_select = gr.Dropdown(
-                            choices=edge_languages, value="Tiếng Việt (Vietnamese)",
-                            label="Ngôn ngữ ưu tiên"
-                        )
-                    flavor = gr.CheckboxGroup(
-                        ["Giữ ngữ điệu", "Làm ấm giọng", "Tự động ngắt câu"],
-                        label="Hiệu ứng âm học",
-                        value=["Tự động ngắt câu"]
-                    )
-                    with gr.Row():
-                        btn_generate = gr.Button("Render Preview", variant="primary")
-                        btn_reset = gr.Button("Làm mới", variant="secondary")
-                with gr.Column(scale=2):
-                    audio_out = gr.Audio(label="Preview", interactive=False)
-                    gr.Markdown("### Tóm tắt nhanh")
-                    summary = gr.Markdown(value="Chưa có bản xem trước.")
-                    log_box = gr.Textbox(
-                        label="Log hành trình",
-                        lines=8,
-                        placeholder="Nhật ký xử lý sẽ xuất hiện tại đây...",
-                    )
-            
-            btn_generate.click(
-                _handle_generate,
-                inputs=[txt_input, voice_select, engine_select, speed_slider, lang_select, flavor],
-                outputs=[audio_out, summary, log_box],
-            )
-            def _reset_fields():
-                return ("", voice_options[0], "Gemini", 1.1, "Tiếng Việt (Vietnamese)", ["Tự động ngắt câu"], None, "Chưa có bản xem trước.", "")
-            
-            btn_reset.click(
-                _reset_fields,
-                outputs=[txt_input, voice_select, engine_select, speed_slider, lang_select, flavor, audio_out, summary, log_box],
-            )
-        
-        with gr.Tab("Batch & Assets"):
-            gr.Markdown("Upload kịch bản, chọn giọng và để studio xử lý hàng loạt.")
-            with gr.Row():
-                file_uploader = gr.File(label="Tệp .txt hoặc .srt", file_types=["text"], file_count="multiple")
-                capcut_voice = gr.Dropdown(capcut_names, label="CapCut profile", value=capcut_names[0])
-            batch_log = gr.Textbox(label="Nhật ký lô", lines=6, value="Chưa khởi chạy.")
-            gr.Examples(
-                examples=["Tôi cần thu âm bản tin...", "Xin chào, đây là studio mới!"],
-                inputs=txt_input,
-                label="Mẫu nhanh",
-            )
-            file_uploader.change(
-                lambda files, profile: f"Đã nhận {len(files) if files else 0} file • Profile: {profile}",
-                inputs=[file_uploader, capcut_voice],
-                outputs=batch_log,
-            )
-        
-        with gr.Tab("Voice Library"):
-            gr.Markdown("Danh mục voice rút gọn (CapCut & Edge).")
-            gr.Dataframe(
-                headers=["Tên hiển thị", "Giới tính", "Ngôn ngữ"],
-                value=[[v["display_name"], v["gender"], v["language"]] for v in DEFAULT_CAPCUT_VOICES],
-                label="CapCut",
-                interactive=False,
-            )
-            gr.Dataframe(
-                headers=["Ngôn ngữ Edge"],
-                value=[[lang] for lang in edge_languages],
-                label="Edge Languages",
-                interactive=False,
-            )
-    
-    return demo
-
-
-def launch_modern_studio(preview_mode: bool = False, **launch_kwargs):
-    """
-    Khởi chạy UI web mới. preview_mode=True dùng cho CI/screenshot (không block).
-    """
-    demo = _build_modern_studio()
-    port = int(os.environ.get("PORT", 7860))
-    defaults = dict(
-        server_name="0.0.0.0",
-        server_port=port,
-        inbrowser=False,
-        share=False,
-        show_error=True,
-        prevent_thread_lock=preview_mode,
-    )
-    defaults.update(launch_kwargs)
-    demo.queue()
-    demo.launch(**defaults)
-    return demo
-
-
 if __name__ == "__main__":
-    launch_modern_studio()
+    try:
+        from ctypes import windll
+        windll.shcore.SetProcessDpiAwareness(1)
+    except:
+        pass
+    
+    # ==========================================================================
+    # LOGIN REQUIREMENT
+    # ==========================================================================
+    # Show login window before starting the main application
+    # If login fails or is cancelled, exit the application
+    
+    # Default server URL - change this to your server
+    DEFAULT_SERVER_URL = "http://34.173.37.168"
+    
+    # Initialize authentication manager
+    _auth_manager = AuthManager(server_url=DEFAULT_SERVER_URL)
+    
+    # Try auto-login first (with saved credentials)
+    auto_success, auto_msg = _auth_manager.auto_login()
+    
+    if auto_success:
+        print(f"Auto-login successful: {_auth_manager.session.username}")
+    else:
+        # Show login dialog
+        if not AuthManager.show_login_dialog(None, _auth_manager):
+            print("Login cancelled or failed. Exiting...")
+            sys.exit(0)
+        print(f"Login successful: {_auth_manager.session.username}")
+    
+    # ==========================================================================
+    # START MAIN APPLICATION
+    # ==========================================================================
+    app = StudioGUI()
+    
+    # Update window title with username
+    if _auth_manager.session:
+        app.title(f"VN TTS Studio - {_auth_manager.session.username}")
+    
+    app.mainloop()

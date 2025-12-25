@@ -423,9 +423,10 @@ def sanitize_error_message(msg: str) -> str:
         return ""
     msg = re.sub(r"https?://\S+", "[đã ẩn]", msg)
     # Ẩn các tham chiếu github không có http/https ở đầu
-    msg = re.sub(r"\bgithub(?:\.com|\.io)/\S+", "[đã ẩn]", msg, flags=re.IGNORECASE)
+    msg = re.sub(r"\bgithub(?:\.com|\.io)/\S+", r"[đã ẩn]", msg, flags=re.IGNORECASE)
     return msg.replace("VieNeu-TTS", "VN TTS")
 
+# Khớp giá trị phần trăm hợp lệ (0-100, cho phép số lẻ) và tránh match bên trong chuỗi dài
 PROGRESS_PERCENT_RE = re.compile(
     r"(?<!\d)(100(?:\.0+)?|[0-9]{1,2}(?:\.\d+)?)(%(?!\d))"
 )
@@ -443,7 +444,7 @@ class ProgressRedirector(io.StringIO):
     def write(self, s):
         if not s:
             return 0
-        text = s.replace("\r", "\n")
+        text = s.replace("\r\n", "\n").replace("\r", "\n")
         for segment in text.split("\n"):
             match = PROGRESS_PERCENT_RE.search(segment)
             if match:
@@ -4245,7 +4246,7 @@ class StudioGUI(ctk.CTk):
         
         def load_thread():
             progress_stream = ProgressRedirector(self._vieneu_progress_update)
-            max_err_len = ERROR_MSG_MAX_LENGTH
+            max_err_len = globals().get("ERROR_MSG_MAX_LENGTH", 50)
             try:
                 backbone_name = self.vieneu_backbone_var.get()
                 codec_name = self.vieneu_codec_var.get()

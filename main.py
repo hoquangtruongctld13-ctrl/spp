@@ -4219,10 +4219,18 @@ class StudioGUI(ctk.CTk):
                 quant_policy = backbone_config.get("quant_policy", 0)
                 self._vieneu_progress_log(10, "Chuẩn bị cấu hình")
                 
-                # Add VN TTS to path
-                vieneu_path = VIENEU_TTS_DIR
-                if vieneu_path not in sys.path:
-                    sys.path.insert(0, vieneu_path)
+                # Try importing from local compiled modules first (vieneu_tts_core)
+                # Falls back to VieNeu-TTS submodule if local modules not found
+                try:
+                    from vieneu_tts_core import VieNeuTTS, FastVieNeuTTS
+                    self.after(0, lambda: self._vieneu_log("ℹ️ Sử dụng VieNeu-TTS compiled modules"))
+                except ImportError:
+                    # Fallback: Add VN TTS submodule to path
+                    vieneu_path = VIENEU_TTS_DIR
+                    if vieneu_path not in sys.path:
+                        sys.path.insert(0, vieneu_path)
+                    from vieneu_tts import VieNeuTTS, FastVieNeuTTS
+                    self.after(0, lambda: self._vieneu_log("ℹ️ Sử dụng VieNeu-TTS submodule"))
                 
                 # Determine actual device - Fix GPU detection
                 # Import torch and check CUDA availability with detailed debugging
@@ -4289,8 +4297,7 @@ class StudioGUI(ctk.CTk):
                     "gguf" not in backbone_name.lower()
                 )
                 
-                # Import and create TTS instance
-                from vieneu_tts import VieNeuTTS, FastVieNeuTTS
+                # VieNeuTTS and FastVieNeuTTS already imported above
                 
                 if use_fast:
                     self._vieneu_progress_log(60, "Tối ưu GPU")

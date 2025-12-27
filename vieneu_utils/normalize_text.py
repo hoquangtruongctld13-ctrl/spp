@@ -248,10 +248,10 @@ class VietnameseTTSNormalizer:
     
     def _normalize_numbers(self, text):
         text = re.sub(r'(\d+(?:[,.]\d+)?)%', lambda m: f'{m.group(1)} phần trăm', text)
-        # 1. Xóa dấu thousand separator trước
+        # Step 1: Remove thousand separators first (e.g., 1.000.000 -> 1000000)
         text = re.sub(r'(\d{1,3})(?:\.(\d{3}))+', lambda m: m.group(0).replace('.', ''), text)
     
-        # 2. Chuyển số thập phân thành chữ
+        # Step 2: Convert decimal numbers to words
         def decimal_to_words(match):
             whole = match.group(1)
             decimal = match.group(2)
@@ -259,9 +259,9 @@ class VietnameseTTSNormalizer:
             separator = 'phẩy' if ',' in match.group(0) else 'chấm'
             return f"{whole} {separator} {decimal_words}"
         
-        # 2a. Dấu phẩy
+        # Step 2a: Handle comma as decimal separator (Vietnamese style)
         text = re.sub(r'(\d+),(\d+)', decimal_to_words, text)
-        # 2b. Dấu chấm (1-2 chữ số thập phân)
+        # Step 2b: Handle dot as decimal separator (1-2 decimal digits only)
         text = re.sub(r'(\d+)\.(\d{1,2})\b', decimal_to_words, text)
         
         return text

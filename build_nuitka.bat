@@ -7,16 +7,25 @@ echo           VieNeu-TTS Compiled as C (not just imported)
 echo ============================================================
 echo.
 
-REM Check Python version
-python --version 2>&1 | findstr "3.12" >nul
-if errorlevel 1 (
-    echo [ERROR] Python 3.12 is required!
-    echo Current Python:
-    python --version
+REM Check Python version (requires Python 3.12 or higher)
+for /f "tokens=2 delims= " %%a in ('python --version 2^>^&1') do set PYVER=%%a
+for /f "tokens=1,2 delims=." %%a in ("%PYVER%") do (
+    set MAJOR=%%a
+    set MINOR=%%b
+)
+if !MAJOR! LSS 3 (
+    echo [ERROR] Python 3.12 or higher is required!
+    echo Current Python: %PYVER%
     pause
     exit /b 1
 )
-echo [OK] Python 3.12 found
+if !MAJOR! EQU 3 if !MINOR! LSS 12 (
+    echo [ERROR] Python 3.12 or higher is required!
+    echo Current Python: %PYVER%
+    pause
+    exit /b 1
+)
+echo [OK] Python %PYVER% found (^>= 3.12)
 
 REM Check eSpeak NG
 espeak-ng --version >nul 2>&1

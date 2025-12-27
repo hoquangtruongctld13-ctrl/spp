@@ -96,13 +96,19 @@ def _setup_macos_espeak():
         "Or set: export PHONEMIZER_ESPEAK_LIBRARY=/path/to/libespeak-ng.dylib"
     )
 
-# Initialize
+# Initialize phonemizer components
 try:
     setup_espeak_library()
     phoneme_dict = load_phoneme_dict()
     normalizer = VietnameseTTSNormalizer()
+except FileNotFoundError as e:
+    print(f"Initialization error - File not found: {e}")
+    raise
+except OSError as e:
+    print(f"Initialization error - eSpeak library: {e}")
+    raise
 except Exception as e:
-    print(f"Initialization error: {e}")
+    print(f"Initialization error - Unexpected: {e}")
     raise
 
 def phonemize_text(text: str) -> str:
@@ -137,6 +143,10 @@ def phonemize_with_dict(text: str, phoneme_dict=phoneme_dict) -> str:
                     language_switch='remove-flags'
                 )
                 
+                # Vietnamese phonetic rule: 'r' at word start should be pronounced
+                # as the retroflex approximant [ɹ] (like English 'r') rather than
+                # the default eSpeak Vietnamese 'r' pronunciation. This is a common
+                # dialectal variant in Southern Vietnamese.
                 if word.lower().startswith('r'):
                     phone_word = 'ɹ' + phone_word[1:]
                 

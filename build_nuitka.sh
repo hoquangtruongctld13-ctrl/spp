@@ -12,14 +12,28 @@ echo "          VieNeu-TTS Compiled as C (not just imported)"
 echo "============================================================"
 echo ""
 
-# Check Python version
-if ! python3.12 --version &> /dev/null; then
-    echo "[ERROR] Python 3.12 is required!"
-    echo "Current Python:"
-    python3 --version || echo "Python not found"
+# Check Python version (requires Python 3.12 or higher)
+PYTHON_CMD=""
+# Try python3 first
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "[ERROR] Python not found!"
     exit 1
 fi
-echo "[OK] Python 3.12 found"
+
+PYVER=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+MAJOR=$(echo $PYVER | cut -d. -f1)
+MINOR=$(echo $PYVER | cut -d. -f2)
+
+if [ "$MAJOR" -lt 3 ] || ([ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 12 ]); then
+    echo "[ERROR] Python 3.12 or higher is required!"
+    echo "Current Python: $PYVER"
+    exit 1
+fi
+echo "[OK] Python $PYVER found (>= 3.12)"
 
 # Check eSpeak NG
 if ! espeak-ng --version &> /dev/null; then
@@ -57,7 +71,7 @@ echo "This may take 10-30 minutes depending on your system."
 echo ""
 
 # Build with Nuitka
-python3 -m nuitka \
+$PYTHON_CMD -m nuitka \
     --standalone \
     --enable-plugin=tk-inter \
     --enable-plugin=numpy \

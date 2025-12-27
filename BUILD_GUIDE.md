@@ -411,62 +411,374 @@ dist/
 
 ---
 
-## 6. Build EXE với Nuitka
+## 6. Build EXE với Nuitka (KHUYẾN NGHỊ)
 
-Nuitka tạo exe tối ưu hơn PyInstaller nhưng build lâu hơn.
+Nuitka compile Python code thành C, tạo exe tối ưu hơn PyInstaller. Quan trọng: VieNeu-TTS sẽ được compile thành C chứ không chỉ import như thư viện bên ngoài.
 
-### 6.1 Cài Đặt Nuitka
+### 6.1 Cài Đặt Nuitka và Dependencies
 
 ```bash
+# Cài Nuitka
 pip install nuitka
-pip install ordered-set zstandard  # Dependencies
+
+# Dependencies bắt buộc
+pip install ordered-set zstandard
+
+# Cài C compiler (Nuitka cần compiler để compile C code)
+# Windows: Visual Studio Build Tools (đã cài ở bước 2.3)
+# Linux: gcc, sudo apt install build-essential
 ```
 
-### 6.2 Build Command
+### 6.2 Cấu Trúc Thư Mục Sau Khi Tái Cấu Trúc
+
+Để Nuitka compile VieNeu-TTS thành C (không chỉ import), cấu trúc thư mục đã được tái cấu trúc:
+
+```
+spp/
+├── main.py                    # File chính
+├── auth_module.py             # Authentication module
+├── vieneu_tts_core/           # ★ VieNeu-TTS core module (được compile thành C)
+│   ├── __init__.py
+│   └── vieneu_tts.py          # VieNeuTTS, FastVieNeuTTS classes
+├── vieneu_utils/              # ★ VieNeu-TTS utilities (được compile thành C)
+│   ├── __init__.py
+│   ├── core_utils.py          # Text chunking
+│   ├── normalize_text.py      # Vietnamese normalization
+│   ├── phonemize_text.py      # Phonemization
+│   └── phoneme_dict.json      # Phoneme dictionary
+├── vieneu_config.yaml         # VieNeu-TTS configuration
+├── edge/                      # Edge TTS module
+├── VieNeu-TTS/                # Submodule gốc (giữ lại cho reference)
+│   └── sample/                # Voice samples (data files)
+└── icon.ico
+```
+
+### 6.3 Build Nuitka Đầy Đủ (Recommended)
+
+#### Windows (Command Prompt hoặc PowerShell):
+
+```batch
+@echo off
+REM Build script cho Windows với Nuitka
+REM Đảm bảo VieNeu-TTS được compile thành C, không chỉ import
+
+python -m nuitka ^
+    --standalone ^
+    --enable-plugin=tk-inter ^
+    --enable-plugin=numpy ^
+    --enable-plugin=anti-bloat ^
+    --follow-imports ^
+    --include-package=vieneu_tts_core ^
+    --include-package=vieneu_utils ^
+    --include-package=edge ^
+    --include-package=auth_module ^
+    --include-package=llama_cpp ^
+    --include-package=phonemizer ^
+    --include-package=phonemizer.backend ^
+    --include-package=phonemizer.backend.espeak ^
+    --include-package=neucodec ^
+    --include-package=torch ^
+    --include-package=torchaudio ^
+    --include-package=librosa ^
+    --include-package=soundfile ^
+    --include-package=customtkinter ^
+    --include-package=google.genai ^
+    --include-package=requests ^
+    --include-package=docx ^
+    --include-data-dir=vieneu_utils=vieneu_utils ^
+    --include-data-files=vieneu_utils/phoneme_dict.json=vieneu_utils/phoneme_dict.json ^
+    --include-data-files=vieneu_config.yaml=vieneu_config.yaml ^
+    --include-data-dir=edge=edge ^
+    --include-data-files=icon.ico=icon.ico ^
+    --nofollow-import-to=lmdeploy ^
+    --nofollow-import-to=triton ^
+    --nofollow-import-to=triton_windows ^
+    --nofollow-import-to=cuda ^
+    --windows-disable-console ^
+    --windows-icon-from-ico=icon.ico ^
+    --company-name="FathTTS" ^
+    --product-name="FathTTS Studio" ^
+    --file-version="1.0.0.0" ^
+    --product-version="1.0.0.0" ^
+    --output-dir=dist ^
+    main.py
+
+echo Build completed! Output: dist\main.dist\
+```
+
+#### Linux/macOS:
 
 ```bash
+#!/bin/bash
+# Build script cho Linux/macOS với Nuitka
+# Đảm bảo VieNeu-TTS được compile thành C, không chỉ import
+
+python -m nuitka \
+    --standalone \
+    --enable-plugin=tk-inter \
+    --enable-plugin=numpy \
+    --enable-plugin=anti-bloat \
+    --follow-imports \
+    --include-package=vieneu_tts_core \
+    --include-package=vieneu_utils \
+    --include-package=edge \
+    --include-package=auth_module \
+    --include-package=llama_cpp \
+    --include-package=phonemizer \
+    --include-package=phonemizer.backend \
+    --include-package=phonemizer.backend.espeak \
+    --include-package=neucodec \
+    --include-package=torch \
+    --include-package=torchaudio \
+    --include-package=librosa \
+    --include-package=soundfile \
+    --include-package=customtkinter \
+    --include-package=google.genai \
+    --include-package=requests \
+    --include-package=docx \
+    --include-data-dir=vieneu_utils=vieneu_utils \
+    --include-data-files=vieneu_utils/phoneme_dict.json=vieneu_utils/phoneme_dict.json \
+    --include-data-files=vieneu_config.yaml=vieneu_config.yaml \
+    --include-data-dir=edge=edge \
+    --include-data-files=icon.ico=icon.ico \
+    --nofollow-import-to=lmdeploy \
+    --nofollow-import-to=triton \
+    --nofollow-import-to=cuda \
+    --output-dir=dist \
+    main.py
+
+echo "Build completed! Output: dist/main.dist/"
+```
+
+### 6.4 Giải Thích Các Tham Số Nuitka
+
+| Tham số | Mục đích |
+|---------|----------|
+| `--standalone` | Tạo thư mục độc lập với tất cả dependencies |
+| `--follow-imports` | Theo dõi và compile tất cả imports |
+| `--include-package=vieneu_tts_core` | **Compile VieNeu-TTS core thành C** |
+| `--include-package=vieneu_utils` | **Compile VieNeu-TTS utils thành C** |
+| `--include-data-files` | Include data files (JSON, YAML) không compile |
+| `--nofollow-import-to=lmdeploy` | Bỏ qua GPU-specific packages |
+| `--enable-plugin=tk-inter` | Plugin cho tkinter/customtkinter |
+| `--enable-plugin=numpy` | Plugin cho NumPy |
+| `--enable-plugin=anti-bloat` | Giảm kích thước bundle |
+
+### 6.5 Build Onefile (Single EXE)
+
+**⚠️ CẢNH BÁO:** Build onefile có nhược điểm:
+- Thời gian khởi động lâu hơn (giải nén vào temp)
+- Kích thước lớn hơn
+- Khó debug hơn
+
+```batch
+REM Windows onefile build
 python -m nuitka ^
     --standalone ^
     --onefile ^
     --enable-plugin=tk-inter ^
     --enable-plugin=numpy ^
-    --include-package=vieneu_tts ^
-    --include-package=utils ^
+    --enable-plugin=anti-bloat ^
+    --follow-imports ^
+    --include-package=vieneu_tts_core ^
+    --include-package=vieneu_utils ^
     --include-package=edge ^
+    --include-package=auth_module ^
     --include-package=llama_cpp ^
     --include-package=phonemizer ^
     --include-package=neucodec ^
     --include-package=torch ^
-    --include-package=torchaudio ^
     --include-package=customtkinter ^
-    --include-data-dir=VieNeu-TTS=VieNeu-TTS ^
+    --include-data-dir=vieneu_utils=vieneu_utils ^
+    --include-data-files=vieneu_config.yaml=vieneu_config.yaml ^
     --include-data-dir=edge=edge ^
-    --include-data-files=icon.ico=icon.ico ^
     --windows-disable-console ^
     --windows-icon-from-ico=icon.ico ^
-    --output-dir=dist ^
     --output-filename=FathTTS.exe ^
+    --output-dir=dist ^
     main.py
 ```
 
-### 6.3 Nuitka Multi-file Build (Khuyến nghị)
+### 6.6 Build Script Tự Động (build_nuitka.bat)
 
-```bash
+Tạo file `build_nuitka.bat` trong thư mục gốc:
+
+```batch
+@echo off
+setlocal enabledelayedexpansion
+
+echo ============================================================
+echo           FathTTS - Nuitka Build Script
+echo           VieNeu-TTS Compiled as C (not just imported)
+echo ============================================================
+echo.
+
+REM Check Python version
+python --version 2>&1 | findstr "3.12" >nul
+if errorlevel 1 (
+    echo [ERROR] Python 3.12 is required!
+    echo Current Python:
+    python --version
+    pause
+    exit /b 1
+)
+echo [OK] Python 3.12 found
+
+REM Check eSpeak NG
+espeak-ng --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] eSpeak NG is not installed!
+    echo Please install from: https://github.com/espeak-ng/espeak-ng/releases
+    pause
+    exit /b 1
+)
+echo [OK] eSpeak NG found
+
+REM Check Nuitka
+pip show nuitka >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] Installing Nuitka...
+    pip install nuitka ordered-set zstandard
+)
+echo [OK] Nuitka ready
+
+REM Check required directories
+if not exist "vieneu_tts_core" (
+    echo [ERROR] vieneu_tts_core directory not found!
+    echo Please run the restructuring script first.
+    pause
+    exit /b 1
+)
+if not exist "vieneu_utils" (
+    echo [ERROR] vieneu_utils directory not found!
+    echo Please run the restructuring script first.
+    pause
+    exit /b 1
+)
+echo [OK] VieNeu-TTS modules found
+
+echo.
+echo Starting Nuitka build...
+echo This may take 10-30 minutes depending on your system.
+echo.
+
+REM Build with Nuitka
 python -m nuitka ^
     --standalone ^
     --enable-plugin=tk-inter ^
     --enable-plugin=numpy ^
-    --include-package=vieneu_tts ^
-    --include-package=utils ^
+    --enable-plugin=anti-bloat ^
+    --follow-imports ^
+    --include-package=vieneu_tts_core ^
+    --include-package=vieneu_utils ^
+    --include-package=edge ^
+    --include-package=auth_module ^
     --include-package=llama_cpp ^
-    --include-data-dir=VieNeu-TTS/sample=VieNeu-TTS/sample ^
-    --include-data-dir=VieNeu-TTS/utils=VieNeu-TTS/utils ^
-    --include-data-files=VieNeu-TTS/config.yaml=VieNeu-TTS/config.yaml ^
+    --include-package=phonemizer ^
+    --include-package=phonemizer.backend ^
+    --include-package=phonemizer.backend.espeak ^
+    --include-package=neucodec ^
+    --include-package=torch ^
+    --include-package=torchaudio ^
+    --include-package=librosa ^
+    --include-package=soundfile ^
+    --include-package=customtkinter ^
+    --include-package=google.genai ^
+    --include-package=requests ^
+    --include-data-dir=vieneu_utils=vieneu_utils ^
+    --include-data-files=vieneu_utils/phoneme_dict.json=vieneu_utils/phoneme_dict.json ^
+    --include-data-files=vieneu_config.yaml=vieneu_config.yaml ^
+    --include-data-dir=edge=edge ^
+    --include-data-files=icon.ico=icon.ico ^
+    --nofollow-import-to=lmdeploy ^
+    --nofollow-import-to=triton ^
+    --nofollow-import-to=triton_windows ^
+    --nofollow-import-to=cuda ^
     --windows-disable-console ^
     --windows-icon-from-ico=icon.ico ^
+    --company-name="FathTTS" ^
+    --product-name="FathTTS Studio" ^
     --output-dir=dist ^
     main.py
+
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Build failed!
+    pause
+    exit /b 1
+)
+
+echo.
+echo ============================================================
+echo                    BUILD SUCCESSFUL!
+echo ============================================================
+echo.
+echo Output directory: dist\main.dist\
+echo.
+echo Post-build steps:
+echo 1. Copy ffmpeg.exe to dist\main.dist\
+echo 2. Copy VieNeu-TTS\sample\ to dist\main.dist\VieNeu-TTS\sample\ (for voice samples)
+echo 3. Rename main.exe to FathTTS.exe if needed
+echo.
+
+REM Copy additional files
+echo Copying additional files...
+if exist "ffmpeg.exe" (
+    copy "ffmpeg.exe" "dist\main.dist\" >nul
+    echo [OK] Copied ffmpeg.exe
+)
+
+if exist "VieNeu-TTS\sample" (
+    xcopy /E /I /Y "VieNeu-TTS\sample" "dist\main.dist\VieNeu-TTS\sample" >nul
+    echo [OK] Copied voice samples
+)
+
+echo.
+echo Done! Your application is ready at: dist\main.dist\main.exe
+pause
 ```
+
+### 6.7 Kiểm Tra Build Thành Công
+
+Sau khi build, kiểm tra các điểm sau:
+
+```batch
+REM 1. Kiểm tra file exe được tạo
+dir dist\main.dist\main.exe
+
+REM 2. Kiểm tra VieNeu modules được compile (không phải .py files)
+dir dist\main.dist\vieneu_tts_core*.pyd
+dir dist\main.dist\vieneu_utils*.pyd
+
+REM 3. Kiểm tra data files được include
+dir dist\main.dist\vieneu_utils\phoneme_dict.json
+dir dist\main.dist\vieneu_config.yaml
+
+REM 4. Chạy thử
+cd dist\main.dist
+main.exe
+```
+
+### 6.8 Lưu Ý Quan Trọng Khi Build Nuitka
+
+1. **VieNeu-TTS được compile thành C:**
+   - `vieneu_tts_core/*.py` → `vieneu_tts_core.*.pyd` (Windows) hoặc `.so` (Linux)
+   - `vieneu_utils/*.py` → `vieneu_utils.*.pyd` hoặc `.so`
+   - Đây là điểm khác biệt chính so với PyInstaller (chỉ bundle .pyc)
+
+2. **Data files không được compile:**
+   - `phoneme_dict.json` - cần thiết cho runtime
+   - `vieneu_config.yaml` - configuration
+   - Voice samples trong `VieNeu-TTS/sample/`
+
+3. **GPU packages bị exclude:**
+   - `lmdeploy`, `triton`, `cuda` - không cần cho CPU build
+   - Thêm lại nếu muốn GPU support
+
+4. **Thời gian build:**
+   - Standalone: 10-30 phút
+   - Onefile: 15-45 phút
+   - Phụ thuộc CPU và số lượng packages
 
 ---
 

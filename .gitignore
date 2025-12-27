@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyd
 
 # Virtual environments
 venv/
@@ -31,6 +32,12 @@ build/
 dist/
 TTS AUIDO/
 *.egg-info/
+*.build/
+main.build/
+
+# Nuitka build artifacts
+*.onefile-build/
+*.dist/
 
 # Temporary files
 _temp_*.mp3
